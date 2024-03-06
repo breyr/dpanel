@@ -1,0 +1,14 @@
+version: "3.4"
+
+services:
+  dpanel:
+    image: dpanel
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 80:80
+    network_mode: bridge
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - .:/app # necessary for development
