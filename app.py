@@ -7,8 +7,14 @@ client = docker.from_env()
 
 @app.route("/")
 def index():
-    containers = client.containers.list()
+    # get containers
+    containers = client.containers.list(all=True)
     return render_template("index.html", containers=containers)
+
+
+@app.route("/info/<containerId>")
+def info(containerId):
+    return client.containers.get(container_id=containerId).attrs
 
 
 if __name__ == "__main__":

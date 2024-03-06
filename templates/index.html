@@ -14,25 +14,71 @@
     <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
 </head>
 
-<body>
-    <div class="text-end mx-2">
-        <span class="text-primary fs-1"><i class="bi bi-plus-circle-fill"></i></span>
+<body class="p-3">
+    <div>
+        <h1>DPanel <i class="bi bi-box"></i></h1>
+    </div>
+    <div class="d-flex justify-content-between mb-3">
+        <div class="btn-group" role="group" aria-label="Basic example">
+            <button type="button" class="btn btn-success disabled"><i class="bi bi-play-fill"></i> start</button>
+            <button type="button" class="btn btn-danger disabled"><i class="bi bi-stop-fill"></i> stop</button>
+            <button type="button" class="btn btn-danger disabled"><i class="bi bi-radioactive"></i> kill</button>
+            <button type="button" class="btn btn-primary disabled"><i class="bi bi-arrow-repeat"></i> restart</button>
+            <button type="button" class="btn btn-primary disabled"><i class="bi bi-pause-fill"></i> pause</button>
+            <button type="button" class="btn btn-primary disabled"><i class="bi bi-play-fill"></i> resume</button>
+            <button class="btn btn-danger disabled"><i class="bi bi-trash-fill"></i> delete</button>
+        </div>
+        <div>
+            <button class="btn btn-outline-primary" onclick="location.reload();"><i
+                    class="bi bi-arrow-repeat"></i>refresh list</button>
+            <button class="btn btn-primary"><i class="bi bi-plus-lg"></i> container</button>
+        </div>
     </div>
     <main>
-        <table class="table table-hover">
+        <table class="table">
             <thead class="table-primary">
-                <th scope="col">ID</th>
+                <th></th>
                 <th scope="col">Name</th>
+                <th scope="col">Short ID</th>
                 <th scope="col">Status</th>
                 <th scope="col">Image</th>
+                <th scope="col">IP</th>
+                <th scope="col">Port Binding</th>
+                <th scope="col">Actions</th>
             </thead>
             <tbody>
                 {% for container in containers %}
                 <tr>
-                    <td scope="row">{{ container.short_id }}</td>
+                    <td>
+                        <input type="checkbox" value="{{ container.short_id }}">
+                    </td>
                     <td>{{ container.name }}</td>
-                    <td>{{ container.status }}</td>
-                    <td>{{ container.image }}</td>
+                    <td scope="row">{{ container.short_id }}</td>
+                    <td>
+                        {% if container.status == "running" %}
+                        <span class="badge bg-success">{{ container.status }}</span>
+                        {% elif container.status == "paused" %}
+                        <span class="badge bg-warning">{{ container.status }}</span>
+                        {% elif container.status == "exited" %}
+                        <span class="badge bg-danger">{{ container.status }}</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ container.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ container.attrs['Config']['Image'] }}</td>
+                    <td>{{ container.attrs['NetworkSettings']['IPAddress'] }}</td>
+                    <td>
+                        {% for key, value in container.attrs['HostConfig']['PortBindings'].items() %}
+                        {% for item in value %}
+                        <a href="http://localhost:{{ item['HostPort'] }}" target="_blank">{{ key.split('/')[0] }}:{{
+                            item['HostPort']
+                            }} <i class="bi bi-box-arrow-up-right"></i></a>
+                        {% endfor %}
+                        {% endfor %}
+                    </td>
+                    <td><button class="transparent-btn" onclick="getInfo('{{ container.short_id }}')"><i
+                                class="bi bi-info-circle text-primary"></i></button>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -42,6 +88,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='js/lib.js') }}"></script>
 </body>
 
 </html>
