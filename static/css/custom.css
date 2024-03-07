@@ -15,3 +15,7 @@ a {
     background-color: transparent;
     border: none;
 }
+
+input:hover {
+    cursor: pointer;
+}

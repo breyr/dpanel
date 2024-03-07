@@ -20,13 +20,19 @@
     </div>
     <div class="d-flex justify-content-between mb-3">
         <div class="btn-group" role="group" aria-label="Basic example">
-            <button type="button" class="btn btn-success disabled"><i class="bi bi-play-fill"></i> start</button>
-            <button type="button" class="btn btn-danger disabled"><i class="bi bi-stop-fill"></i> stop</button>
-            <button type="button" class="btn btn-danger disabled"><i class="bi bi-radioactive"></i> kill</button>
-            <button type="button" class="btn btn-primary disabled"><i class="bi bi-arrow-repeat"></i> restart</button>
-            <button type="button" class="btn btn-primary disabled"><i class="bi bi-pause-fill"></i> pause</button>
-            <button type="button" class="btn btn-primary disabled"><i class="bi bi-play-fill"></i> resume</button>
-            <button class="btn btn-danger disabled"><i class="bi bi-trash-fill"></i> delete</button>
+            <button type="button" class="btn btn-success disabled" id="btn-start"><i class="bi bi-play-fill"></i>
+                start</button>
+            <button type="button" class="btn btn-danger disabled" id="btn-stop"><i class="bi bi-stop-fill"></i>
+                stop</button>
+            <button type="button" class="btn btn-danger disabled" id="btn-kill"><i class="bi bi-radioactive"></i>
+                kill</button>
+            <button type="button" class="btn btn-primary disabled" id="btn-restart"><i class="bi bi-arrow-repeat"></i>
+                restart</button>
+            <button type="button" class="btn btn-primary disabled" id="btn-pause"><i class="bi bi-pause-fill"></i>
+                pause</button>
+            <button type="button" class="btn btn-primary disabled" id="btn-resume"><i class="bi bi-play-fill"></i>
+                resume</button>
+            <button class="btn btn-danger disabled" id="btn-delete"><i class="bi bi-trash-fill"></i> delete</button>
         </div>
         <div>
             <button class="btn btn-outline-primary" onclick="location.reload();"><i class="bi bi-arrow-repeat"></i>
@@ -50,7 +56,7 @@
                 {% for container in containers %}
                 <tr>
                     <td>
-                        <input type="checkbox" value="{{ container.short_id }}">
+                        <input type="radio" value="{{ container.short_id }}" name="container">
                     </td>
                     <td>{{ container.name }}</td>
                     <td scope="row">{{ container.short_id }}</td>
@@ -88,7 +94,11 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>
+    <!-- jquery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <script src="{{ url_for('static', filename='js/lib.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/customJquery.js') }}"></script>
 </body>
 
 </html>
