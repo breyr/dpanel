@@ -14,6 +14,7 @@ def index():
 
 @app.route("/info/<containerId>")
 def info(containerId):
+    # get container information
     return client.containers.get(container_id=containerId).attrs
 
 

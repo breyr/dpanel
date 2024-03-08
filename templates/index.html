@@ -56,7 +56,7 @@
                 {% for container in containers %}
                 <tr>
                     <td>
-                        <input type="radio" value="{{ container.short_id }}" name="container">
+                        <input type="checkbox" value="{{ container.short_id }}" name="container">
                     </td>
                     <td>{{ container.name }}</td>
                     <td scope="row">{{ container.short_id }}</td>

@@ -1,18 +1,12 @@
-
-$(document).ready(function () {
-    $('input[type="radio"]').prop('checked', false);
-});
-
-$(document).on('click', 'input[type="radio"]', function () {
+$(document).on('click', 'input[type="checkbox"]', function () {
     var status = $(this).closest('tr').find('td:eq(3)').text().trim();
-
-    // First, disable all buttons
-    $('#btn-stop, #btn-kill, #btn-restart, #btn-pause, #btn-resume, #btn-delete').addClass('disabled');
+    var checkedCount = $('input[type="checkbox"]:checked').length;
 
     // Then, enable the correct buttons based on the status
-    if (status == "running") {
-        $('#btn-stop, #btn-kill, #btn-restart, #btn-pause, #btn-delete').removeClass('disabled');
-    } else if (status == "paused") {
-        $('#btn-stop, #btn-kill, #btn-restart, #btn-resume, #btn-delete').removeClass('disabled');
+    if (checkedCount > 0) {
+        $('#btn-stop, #btn-kill, #btn-restart, #btn-pause, #btn-delete, #btn-resume, #btn-start').removeClass('disabled');
+    } else {
+        // If no checkboxes are checked, disable all buttons
+        $('#btn-stop, #btn-kill, #btn-restart, #btn-pause, #btn-delete, #btn-resume, #btn-start').addClass('disabled');
     }
 });
