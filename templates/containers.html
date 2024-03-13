@@ -19,13 +19,13 @@
             delete</button>
     </div>
     <div>
-        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#pruneModal">
-            <i class="fa-solid fa-tree"></i> prune
-        </button>
         <button class="btn btn-primary" type="button" id="refresh-btn">
             <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true" id="spinner"></span>
             <i class="fa-solid fa-arrows-rotate" id="refresh-icon"></i>
             <span id="refresh-text">refresh list</span>
+        </button>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#pruneModal">
+            <i class="fa-solid fa-tree"></i> prune
         </button>
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createContainerModal"><i
                 class="fa-solid fa-plus"></i></i> container</button>
@@ -81,7 +81,10 @@
 <section class="flex-grow-1">
     <table class="table">
         <thead class="table-primary">
-            <th><input type="checkbox" id="select-all" class="tr-checkbox" /></th>
+            <th><input type="checkbox" id="select-all" class="tr-checkbox me-2" /><label for="select-all"
+                    style="cursor: pointer;">Select
+                    all</label>
+            </th>
             <th scope="col">Name</th>
             <th scope="col">Short ID</th>
             <th scope="col">Status</th>
@@ -138,7 +141,13 @@
         // handle prune check box
         $('#btncheck1').change(function () {
             $('#confirm-prune').toggleClass('disabled');
-        })
+        });
+
+        // handle select all checkbox change
+        $('#select-all').change(function () {
+            // select all checkboxes with class of tr-checkbox and make them selected
+            $('.tr-checkbox').prop('checked', this.checked);
+        });
     });
 
     function loadData() {
