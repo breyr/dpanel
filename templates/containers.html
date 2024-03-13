@@ -1,0 +1,94 @@
+{% extends "layouts/base.html" %}
+{% block title %}Containers | DPanel{% endblock %}
+{% block main %}
+<div class="d-flex justify-content-between mb-3">
+    <div class="btn-group" role="group" aria-label="Basic example">
+        <button type="button" class="btn btn-success disabled" id="btn-start"><i class="bi bi-play-fill"></i>
+            start</button>
+        <button type="button" class="btn btn-danger disabled" id="btn-stop"><i class="bi bi-stop-fill"></i>
+            stop</button>
+        <button type="button" class="btn btn-danger disabled" id="btn-kill"><i class="bi bi-radioactive"></i>
+            kill</button>
+        <button type="button" class="btn btn-primary disabled" id="btn-restart"><i class="bi bi-arrow-repeat"></i>
+            restart</button>
+        <button type="button" class="btn btn-primary disabled" id="btn-pause"><i class="bi bi-pause-fill"></i>
+            pause</button>
+        <button type="button" class="btn btn-primary disabled" id="btn-resume"><i class="bi bi-play-fill"></i>
+            resume</button>
+        <button class="btn btn-danger disabled" id="btn-delete"><i class="bi bi-trash-fill"></i>
+            delete</button>
+    </div>
+    <div>
+        <button class="btn btn-outline-primary" onclick="location.reload();"><i class="bi bi-arrow-repeat"></i>
+            refresh list</button>
+        <button class="btn btn-primary"><i class="bi bi-plus-lg"></i> container</button>
+    </div>
+</div>
+<section>
+    <table class="table">
+        <thead class="table-primary">
+            <th></th>
+            <th scope="col">Name</th>
+            <th scope="col">Short ID</th>
+            <th scope="col">Status</th>
+            <th scope="col">Image</th>
+            <th scope="col">IP</th>
+            <th scope="col">Port Binding</th>
+            <th scope="col">Actions</th>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <div id="loading" style="display: none" class="text-center">
+        <div class="spinner-border text-info" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+    $(document).ready(function () {
+        $("#loading").show();
+        setTimeout(function () {
+            $.getJSON("{{ url_for('get_containers') }}", function (data) {
+                var tbody = $("table tbody");
+                tbody.empty();
+                $.each(data, function (i, container) {
+                    var tr = $("<tr>");
+                    tr.append($("<td>").html('<input type="checkbox" value="' + container.Id + '" name="container">'));
+                    tr.append($("<td>").text(container.Name));
+                    tr.append($("<td>").text(container.Id.substring(0, 12)));
+                    tr.append($("<td>").html('<span class="badge bg-' + getStatusClass(container.State.Status) + '">' + container.State.Status + '</span>'));
+                    tr.append($("<td>").text(container.Config.Image));
+                    tr.append($("<td>").text(container.NetworkSettings.IPAddress));
+                    tr.append($("<td>").html(getPortBindings(container.HostConfig.PortBindings)));
+                    tr.append($("<td>").html('<button class="transparent-btn" onclick="getInfo(\'' + container.Id + '\')"><i class="bi bi-info-circle text-primary"></i></button>'));
+                    tbody.append(tr);
+                });
+                $("#loading").hide();
+            });
+        }, 1000);
+
+    });
+
+    function getStatusClass(status) {
+        switch (status) {
+            case "running": return "success";
+            case "paused": return "warning";
+            case "exited": return "danger";
+            default: return "secondary";
+        }
+    }
+
+    function getPortBindings(portBindings) {
+        var result = "";
+        $.each(portBindings, function (key, value) {
+            $.each(value, function (i, item) {
+                result += '<a href="http://localhost:' + item.HostPort + '" target="_blank">' + key.split('/')[0] + ':' + item.HostPort + ' <i class="bi bi-box-arrow-up-right"></i></a>';
+            });
+        });
+        return result;
+    }
+</script>
+{% endblock %}

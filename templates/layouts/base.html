@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DPanel{% endblock %}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Bootstrap icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
+    <!-- fontawesome -->
+    <script src="https://kit.fontawesome.com/4137f8921b.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <main class="d-flex h-100 w-100">
+        <nav class="nav flex-column bg-light vh-100 p-2">
+            <ul class="navbar-nav text-center fs-3">
+                <div class="navbar-brand text-center fw-bold">
+                    <p>DPanel</p>
+                </div>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('index') }}" data-bs-toggle="tooltip" title="Containers">
+                        <i
+                            class="fa-solid fa-boxes-stacked {% if current_page == 'containers' %}text-primary{% endif %}"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('images') }}" data-bs-toggle="tooltip" title="Images">
+                        <i class="fa-solid fa-image {% if current_page == 'images' %}text-primary{% endif %}"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('volumes') }}" data-bs-toggle="tooltip" title="Volumes">
+                        <i class="fa-solid fa-database  {% if current_page == 'volumes' %}text-primary{% endif %}"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <section class="flex-grow-1 p-3">
+            {% block main %}{% endblock %}
+        </section>
+    </main>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+    <!-- jquery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='js/lib.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/customJquery.js') }}"></script>
+    <script>
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    </script>
+    {% block scripts %} {% endblock %}
+</body>
+
+</html>
