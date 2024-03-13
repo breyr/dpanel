@@ -1,6 +1,11 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request, flash, redirect, url_for
 import docker
+import secrets
+import json
+
+
 app = Flask(__name__)
+app.secret_key = secrets.token_bytes(16)
 client = docker.from_env()
 
 
@@ -16,6 +21,43 @@ def get_containers():
     containers = client.containers.list(all=True)
     return jsonify([container.attrs for container in containers])
 
+
+# creating a container, not running it
+@app.route("/containers", methods=['POST'])
+def create_container():
+    try:
+        # get desired image from form
+        image = request.form.get('image')
+        # create container
+        container = client.containers.create(image, command="/bin/bash")
+        flash(f"Container {container.short_id} created successfully", "success")
+        return redirect(url_for('index'))
+    except docker.errors.ImageNotFound:
+        flash("Image not found", "error")
+        return redirect(url_for('index'))
+    
+
+# delete containers
+@app.route("/delete", methods=['DELETE'])
+def delete_container():
+    pass
+
+
+# prune system
+@app.route("/prune", methods=['POST'])
+def prune_system():
+    try: 
+        pruned_containers = client.containers.prune()
+        # client.images.prune()
+        # client.networks.prune()
+        # client.volumes.prune()
+        num_deleted = len(pruned_containers.get('ContainersDeleted', []))
+        space_reclaimed = pruned_containers.get('SpaceReclaimed', 0)
+        flash(f"System pruned successfully: {num_deleted} containers deleted, {space_reclaimed} space reclaimed", "success")
+        return redirect(url_for('index'))
+    except docker.errors.APIError:
+        flash("API error, please try again", "danger")
+        return redirect(url_for('index'))
 
 @app.route("/images")
 def images():

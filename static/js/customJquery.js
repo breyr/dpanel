@@ -1,6 +1,6 @@
-$(document).on('click', 'input[type="checkbox"]', function () {
+$(document).on('click', '.tr-checkbox', function () {
     var status = $(this).closest('tr').find('td:eq(3)').text().trim();
-    var checkedCount = $('input[type="checkbox"]:checked').length;
+    var checkedCount = $('.tr-checkbox:checked').length;
 
     // Then, enable the correct buttons based on the status
     if (checkedCount > 0) {

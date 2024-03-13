@@ -19,18 +19,69 @@
             delete</button>
     </div>
     <div>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#pruneModal">
+            <i class="fa-solid fa-tree"></i> prune
+        </button>
         <button class="btn btn-primary" type="button" id="refresh-btn">
             <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true" id="spinner"></span>
             <i class="fa-solid fa-arrows-rotate" id="refresh-icon"></i>
             <span id="refresh-text">refresh list</span>
         </button>
-        <button class="btn btn-primary"><i class="fa-solid fa-plus"></i></i> container</button>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createContainerModal"><i
+                class="fa-solid fa-plus"></i></i> container</button>
     </div>
+
+    <!-- Create container modal -->
+    <div class="modal fade" id="createContainerModal" tabindex="-1" aria-labelledby="createContainerModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createContainerModalLabel">Create Container</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="/containers" method="post">
+                        <div class="mb-3">
+                            <label for="image" class="form-label">Image</label>
+                            <input type="text" class="form-control" id="image" aria-describedby="imageHelp" required>
+                            <div id="imageHelp" class="form-text">If your image is not found on your device, it will be
+                                automatically pulled.</div>
+                        </div>
+                        <input type="submit" class="btn btn-success" value="Create" />
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prune modal -->
+    <div class="modal fade" id="pruneModal" tabindex="-1" aria-labelledby="pruneModal" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createContainerModalLabel">Docker System Prune</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="/prune" method="post">
+                        <div class="mb-3 text-danger">
+                            You are about to prune your system, do you wish to continue?
+                        </div>
+                        <input type="checkbox" class="btn-check" id="btncheck1" autocomplete="off">
+                        <label class="btn btn-outline-danger" for="btncheck1">Yes</label>
+                        <input type="submit" class="btn btn-danger disabled" value="prune" id="confirm-prune" />
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
-<section>
+<section class="flex-grow-1">
     <table class="table">
         <thead class="table-primary">
-            <th></th>
+            <th><input type="checkbox" id="select-all" class="tr-checkbox" /></th>
             <th scope="col">Name</th>
             <th scope="col">Short ID</th>
             <th scope="col">Status</th>
@@ -47,6 +98,18 @@
             <span class="sr-only">Loading...</span>
         </div>
     </div>
+</section>
+<section class="position-absolute bottom-0 end-0 w-25 me-3">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
 </section>
 {% endblock %}
 {% block scripts %}
@@ -71,6 +134,11 @@
                 $("#refresh-btn").removeClass("disabled");
             });
         });
+
+        // handle prune check box
+        $('#btncheck1').change(function () {
+            $('#confirm-prune').toggleClass('disabled');
+        })
     });
 
     function loadData() {
@@ -82,7 +150,7 @@
                 tbody.empty();
                 $.each(data, function (i, container) {
                     var tr = $("<tr>");
-                    tr.append($("<td>").html('<input type="checkbox" value="' + container.Id + '" name="container">'));
+                    tr.append($("<td>").html('<input type="checkbox" class="tr-checkbox" value="' + container.Id + '" name="container">'));
                     tr.append($("<td>").text(container.Name));
                     tr.append($("<td>").text(container.Id.substring(0, 12)));
                     tr.append($("<td>").html('<span class="badge bg-' + getStatusClass(container.State.Status) + '">' + container.State.Status + '</span>'));
