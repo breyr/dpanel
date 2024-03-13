@@ -19,7 +19,7 @@
             delete</button>
     </div>
     <div>
-        <button class="btn btn-outline-primary" onclick="location.reload();"><i class="bi bi-arrow-repeat"></i>
+        <button class="btn btn-outline-primary" onclick="loadData();"><i class="bi bi-arrow-repeat"></i>
             refresh list</button>
         <button class="btn btn-primary"><i class="bi bi-plus-lg"></i> container</button>
     </div>
@@ -49,6 +49,10 @@
 {% block scripts %}
 <script>
     $(document).ready(function () {
+        loadData();
+    });
+
+    function loadData() {
         $("#loading").show();
         setTimeout(function () {
             $.getJSON("{{ url_for('get_containers') }}", function (data) {
@@ -69,8 +73,7 @@
                 $("#loading").hide();
             });
         }, 1000);
-
-    });
+    }
 
     function getStatusClass(status) {
         switch (status) {
