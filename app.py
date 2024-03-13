@@ -71,13 +71,13 @@ def start_container():
         for id in ids:
             container = client.containers.get(id)
             if container.status == 'running':
-                error_ids.append(id)
+                error_ids.append(id[:12])
             else:
                 try:
                     # start the container
                     container.start()
                 except docker.errors.APIError as e:
-                    error_ids.append(id)
+                    error_ids.append(id[:12])
         # no containers were started
         if len(ids) - len(error_ids) == 0:
             flash(f"Containers already started: {error_ids}", "danger")
@@ -102,13 +102,13 @@ def stop_container():
         for id in ids:
             container = client.containers.get(id)
             if container.status == 'exited':
-                error_ids.append(id)
+                error_ids.append(id[:12])
             else:
                 try:
                     # stop the container
                     container.stop()
                 except docker.error.APIError as e:
-                    error_ids.append(id)
+                    error_ids.append(id[:12])
         # no containers were stopped
         if len(ids) - len(error_ids) == 0:
             flash(f"Containers already stopped: {error_ids}", "danger")
@@ -123,6 +123,36 @@ def stop_container():
         return jsonify({'message': 'API Error'}), 400
 
 
+# kill containers
+@app.route("/kill", methods=['POST'])
+def kill_container():
+    try:
+        data = request.get_json()
+        ids = data['ids']
+        error_ids = []
+        for id in ids:
+            container = client.containers.get(id)
+            if container.status == 'exited':
+                error_ids.append(id[:12])
+            else:
+                try:
+                    # stop the container
+                    container.kill()
+                except docker.error.APIError as e:
+                    error_ids.append(id[:12])
+        # no containers were stopped
+        if len(ids) - len(error_ids) == 0:
+            flash(f"Containers already killed: {error_ids}", "danger")
+        else:
+            flash(f"Containers killed: {len(ids) - len(error_ids)}", "success")
+            # print error ids if any
+            if error_ids:
+                flash(f"Containers already killed: {error_ids}", "danger")
+        return jsonify({'message': 'Containers killed successfully'}), 200
+    except Exception as e:
+        flash("API error, please try again", "danger")
+        return jsonify({'message': 'API Error'}), 400
+
 # prune system
 @app.route("/prune", methods=['POST'])
 def prune_system():
@@ -131,7 +161,11 @@ def prune_system():
         # client.images.prune()
         # client.networks.prune()
         # client.volumes.prune()
-        num_deleted = len(pruned_containers.get('ContainersDeleted', []))
+        containers_deleted = pruned_containers.get('ContainersDeleted')
+        if containers_deleted is not None:
+            num_deleted = len(containers_deleted)
+        else:
+            num_deleted = 0
         space_reclaimed = pruned_containers.get('SpaceReclaimed', 0)
         flash(f"System pruned successfully: {num_deleted} containers deleted, {space_reclaimed} space reclaimed", "success")
         return redirect(url_for('index'))

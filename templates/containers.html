@@ -81,9 +81,7 @@
 <section class="flex-grow-1">
     <table class="table">
         <thead class="table-primary">
-            <th><input type="checkbox" id="select-all" class="me-2" /><label for="select-all"
-                    style="cursor: pointer;">Select
-                    all</label>
+            <th><input type="checkbox" id="select-all" class="me-2" />
             </th>
             <th scope="col">Name</th>
             <th scope="col">Short ID</th>
@@ -166,7 +164,7 @@
                 tbody.empty();
                 $.each(data, function (i, container) {
                     var tr = $("<tr>");
-                    tr.append($("<td>").html('<input type="checkbox" class="tr-checkbox" value="' + container.Id + '" name="container"> <span class="spinner-grow spinner-grow-sm row-spinner d-none" role="status" aria-hidden="true"></span> <span class="action-text"></span>'));
+                    tr.append($("<td>").html('<input type="checkbox" class="tr-checkbox" value="' + container.Id + '" name="container"> <span class="spinner-grow spinner-grow-sm row-spinner d-none" role="status" aria-hidden="true"></span>'));
                     // substring(1) because all containers have a name starting with / for some reason
                     tr.append($("<td>").text(container.Name.substring(1)));
                     tr.append($("<td>").text(container.Id.substring(0, 12)));
@@ -207,10 +205,9 @@
     if (sessionStorage.getItem('actionCompleted')) {
         // for each checked row, hide the spinner and clear the action text
         $('.tr-checkbox:checked').each(function () {
-            $(this).prop('disabled', false);
+            $(this).show();
             var row = $(this).closest('tr');
             row.find('.row-spinner').toggleClass('d-none');
-            row.find('.action-text').text('');
             $('#' + actionBtnId).prop('disabled', false);
         });
 
@@ -218,7 +215,7 @@
         sessionStorage.removeItem('actionCompleted');
     }
 
-    function performAction(url, actionText, actionBtnId) {
+    function performAction(url, actionBtnId) {
         // get all container ids that are checked
         var checkedIds = $('.tr-checkbox:checked').map(function () {
             return this.value;
@@ -230,10 +227,9 @@
         // for each checked row, show the spinner and display the action text
         $('.tr-checkbox:checked').each(function () {
             // disable checkbox
-            $(this).prop('disabled', true);
+            $(this).hide();
             var row = $(this).closest('tr');
             row.find('.row-spinner').toggleClass('d-none');
-            row.find('.action-text').text(actionText);
         });
 
         $.ajax({
@@ -257,15 +253,19 @@
     }
 
     $('#btn-delete').click(function () {
-        performAction('/delete', 'Deleting...', 'btn-delete');
+        performAction('/delete', 'btn-delete');
     });
 
     $('#btn-start').click(function () {
-        performAction('/start', 'Starting...', 'btn-start');
+        performAction('/start', 'btn-start');
     });
 
     $('#btn-stop').click(function () {
-        performAction('/stop', 'Stopping...', 'btn-stop');
+        performAction('/stop', 'btn-stop');
     });
+
+    $('#btn-kill').click(function () {
+        performAction('/kill', 'btn-kill');
+    })
 </script>
 {% endblock %}
