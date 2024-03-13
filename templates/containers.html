@@ -19,9 +19,12 @@
             delete</button>
     </div>
     <div>
-        <button class="btn btn-outline-primary" onclick="loadData();"><i class="bi bi-arrow-repeat"></i>
-            refresh list</button>
-        <button class="btn btn-primary"><i class="bi bi-plus-lg"></i> container</button>
+        <button class="btn btn-primary" type="button" id="refresh-btn">
+            <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true" id="spinner"></span>
+            <i class="fa-solid fa-arrows-rotate" id="refresh-icon"></i>
+            <span id="refresh-text">refresh list</span>
+        </button>
+        <button class="btn btn-primary"><i class="fa-solid fa-plus"></i></i> container</button>
     </div>
 </div>
 <section>
@@ -49,11 +52,30 @@
 {% block scripts %}
 <script>
     $(document).ready(function () {
-        loadData();
+        $("#spinner").hide();
+        $("#loading").show();
+        loadData().done(function () {
+            $("#loading").hide();
+        });
+
+        $("#refresh-btn").click(function () {
+            $("#refresh-icon").hide();
+            $("#spinner").show();
+            $("#refresh-text").text("Loading...");
+            $("#refresh-btn").addClass("disabled");
+
+            loadData().done(function () {
+                $("#spinner").hide();
+                $("#refresh-icon").show();
+                $("#refresh-text").text("refresh list");
+                $("#refresh-btn").removeClass("disabled");
+            });
+        });
     });
 
     function loadData() {
-        $("#loading").show();
+        var dfd = $.Deferred();
+
         setTimeout(function () {
             $.getJSON("{{ url_for('get_containers') }}", function (data) {
                 var tbody = $("table tbody");
@@ -70,9 +92,11 @@
                     tr.append($("<td>").html('<button class="transparent-btn" onclick="getInfo(\'' + container.Id + '\')"><i class="bi bi-info-circle text-primary"></i></button>'));
                     tbody.append(tr);
                 });
-                $("#loading").hide();
+                dfd.resolve(); // Resolve the Deferred when the AJAX call is done
             });
         }, 300);
+
+        return dfd.promise(); // Return the promise
     }
 
     function getStatusClass(status) {
