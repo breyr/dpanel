@@ -22,6 +22,7 @@ def get_containers():
     return jsonify([container.attrs for container in containers])
 
 
+# NOT USING THIS ENDPOIT
 # creating a container, not running it
 @app.route("/containers", methods=['POST'])
 def create_container():
@@ -33,14 +34,33 @@ def create_container():
         flash(f"Container {container.short_id} created successfully", "success")
         return redirect(url_for('index'))
     except docker.errors.ImageNotFound:
-        flash("Image not found", "error")
-        return redirect(url_for('index'))
+        # try pulling the image and creating
+        try:
+            image = client.images.pull(image, tag="latest")
+            container = client.containers.create(image, command="/bin/bash")
+            flash(f"Container {container.short_id} created successfully", "success")
+            return redirect(url_for('index'))
+        except docker.errors.APIError:
+            flash("API error, please try again", "danger")
+            return redirect(url_for('index'))
     
 
 # delete containers
-@app.route("/delete", methods=['DELETE'])
+@app.route("/delete", methods=['POST'])
 def delete_container():
-    pass
+    try:
+        data = request.get_json()
+        ids = data['ids']
+        for id in ids:
+            # delete the container
+            container = client.containers.get(id)
+            # forcibly kills and removes container
+            container.remove(v=False, link=False, force=True)
+        flash(f"Containers deleted: {len(ids)}", "success")
+        return jsonify({'message': 'Containers deleted successfully'}), 200
+    except docker.errors.APIError:
+        flash("API error, please try again", "danger")
+        return jsonify({'message': 'API Error'}), 400
 
 
 # prune system

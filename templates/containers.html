@@ -46,7 +46,7 @@
                             <label for="image" class="form-label">Image</label>
                             <input type="text" class="form-control" id="image" aria-describedby="imageHelp" required>
                             <div id="imageHelp" class="form-text">If your image is not found on your device, it will be
-                                automatically pulled.</div>
+                                automatically pulled using tage :latest</div>
                         </div>
                         <input type="submit" class="btn btn-success" value="Create" />
                     </form>
@@ -81,7 +81,7 @@
 <section class="flex-grow-1">
     <table class="table">
         <thead class="table-primary">
-            <th><input type="checkbox" id="select-all" class="tr-checkbox me-2" /><label for="select-all"
+            <th><input type="checkbox" id="select-all" class="me-2" /><label for="select-all"
                     style="cursor: pointer;">Select
                     all</label>
             </th>
@@ -147,6 +147,13 @@
         $('#select-all').change(function () {
             // select all checkboxes with class of tr-checkbox and make them selected
             $('.tr-checkbox').prop('checked', this.checked);
+            // enable/disable buttons
+            if (this.checked) {
+                $('#btn-stop, #btn-kill, #btn-restart, #btn-pause, #btn-delete, #btn-resume, #btn-start').removeClass('disabled');
+            } else {
+                // If no checkboxes are checked, disable all buttons
+                $('#btn-stop, #btn-kill, #btn-restart, #btn-pause, #btn-delete, #btn-resume, #btn-start').addClass('disabled');
+            }
         });
     });
 
@@ -160,7 +167,8 @@
                 $.each(data, function (i, container) {
                     var tr = $("<tr>");
                     tr.append($("<td>").html('<input type="checkbox" class="tr-checkbox" value="' + container.Id + '" name="container">'));
-                    tr.append($("<td>").text(container.Name));
+                    // substring(1) because all containers have a name starting with / for some reason
+                    tr.append($("<td>").text(container.Name.substring(1)));
                     tr.append($("<td>").text(container.Id.substring(0, 12)));
                     tr.append($("<td>").html('<span class="badge bg-' + getStatusClass(container.State.Status) + '">' + container.State.Status + '</span>'));
                     tr.append($("<td>").text(container.Config.Image));
@@ -194,5 +202,27 @@
         });
         return result;
     }
+
+    $('#btn-delete').click(function () {
+        // get all container ids that are checked
+        var checkedIds = $('.tr-checkbox:checked').map(function () {
+            return this.value;
+        }).get();
+        console.log(checkedIds);
+        $.ajax({
+            url: '/delete',
+            type: 'POST',
+            data: JSON.stringify({ 'ids': checkedIds }),
+            contentType: 'application/json',
+            success: function (result) {
+                // redirect to the index page
+                window.location.href = '/';
+            },
+            error: function (request, status, error) {
+                // handle errors
+                window.location.href = '/';
+            }
+        })
+    });
 </script>
 {% endblock %}
