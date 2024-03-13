@@ -37,11 +37,11 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="createContainerModalLabel">Create Container</h5>
+                    <h5 class="modal-title" id="createContainerModalLabel">Create & Run a Container</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form action="/containers" method="post">
+                    <form action="" method="">
                         <div class="mb-3">
                             <label for="image" class="form-label">Image</label>
                             <input type="text" class="form-control" id="image" aria-describedby="imageHelp" required>
@@ -197,20 +197,19 @@
         var result = "";
         $.each(portBindings, function (key, value) {
             $.each(value, function (i, item) {
-                result += '<a href="http://localhost:' + item.HostPort + '" target="_blank">' + key.split('/')[0] + ':' + item.HostPort + ' <i class="bi bi-box-arrow-up-right"></i></a>';
+                result += '<a href="http://localhost:' + item.HostPort + '" target="_blank">' + item.HostPort + ':' + key.split('/')[0] + ' <i class="bi bi-box-arrow-up-right"></i></a> ';
             });
         });
         return result;
     }
 
-    $('#btn-delete').click(function () {
+    function performAction(url) {
         // get all container ids that are checked
         var checkedIds = $('.tr-checkbox:checked').map(function () {
             return this.value;
         }).get();
-        console.log(checkedIds);
         $.ajax({
-            url: '/delete',
+            url: url,
             type: 'POST',
             data: JSON.stringify({ 'ids': checkedIds }),
             contentType: 'application/json',
@@ -222,7 +221,19 @@
                 // handle errors
                 window.location.href = '/';
             }
-        })
+        });
+    }
+
+    $('#btn-delete').click(function () {
+        performAction('/delete');
+    });
+
+    $('#btn-start').click(function () {
+        performAction('/start');
+    });
+
+    $('#btn-stop').click(function () {
+        performAction('/stop');
     });
 </script>
 {% endblock %}

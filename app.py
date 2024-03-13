@@ -11,8 +11,6 @@ client = docker.from_env()
 
 @app.route("/")
 def index():
-    # get containers
-    containers = client.containers.list(all=True)
     return render_template("containers.html",  current_page='containers')
 
 
@@ -22,7 +20,7 @@ def get_containers():
     return jsonify([container.attrs for container in containers])
 
 
-# NOT USING THIS ENDPOIT
+# NOT USING THIS ENDPOIT, CREATE WILL NOT WORK
 # creating a container, not running it
 @app.route("/containers", methods=['POST'])
 def create_container():
@@ -30,14 +28,14 @@ def create_container():
         # get desired image from form
         image = request.form.get('image')
         # create container
-        container = client.containers.create(image, command="/bin/bash")
+        container = client.containers.create(image)
         flash(f"Container {container.short_id} created successfully", "success")
         return redirect(url_for('index'))
     except docker.errors.ImageNotFound:
         # try pulling the image and creating
         try:
             image = client.images.pull(image, tag="latest")
-            container = client.containers.create(image, command="/bin/bash")
+            container = client.containers.create(image.id)
             flash(f"Container {container.short_id} created successfully", "success")
             return redirect(url_for('index'))
         except docker.errors.APIError:
@@ -63,6 +61,68 @@ def delete_container():
         return jsonify({'message': 'API Error'}), 400
 
 
+# start containers
+@app.route("/start", methods=['POST'])
+def start_container():
+    try:
+        data = request.get_json()
+        ids = data['ids']
+        error_ids = []
+        for id in ids:
+            container = client.containers.get(id)
+            if container.status == 'running':
+                error_ids.append(id)
+            else:
+                try:
+                    # start the container
+                    container.start()
+                except docker.errors.APIError as e:
+                    error_ids.append(id)
+        # no containers were started
+        if len(ids) - len(error_ids) == 0:
+            flash(f"Containers already started: {error_ids}", "danger")
+        else:
+            flash(f"Containers started: {len(ids) - len(error_ids)}", "success")
+            # print error ids if any
+            if error_ids:
+                flash(f"Containers already started: {error_ids}", "danger")
+        return jsonify({'message': 'Containers started successfully'}), 200
+    except Exception as e:
+        flash("API error, please try again", "danger")
+        return jsonify({'message': 'API Error'}), 400
+    
+
+# stop containers
+@app.route("/stop", methods=['POST'])
+def stop_container():
+    try:
+        data = request.get_json()
+        ids = data['ids']
+        error_ids = []
+        for id in ids:
+            container = client.containers.get(id)
+            if container.status == 'exited':
+                error_ids.append(id)
+            else:
+                try:
+                    # stop the container
+                    container.stop()
+                except docker.error.APIError as e:
+                    error_ids.append(id)
+        # no containers were stopped
+        if len(ids) - len(error_ids) == 0:
+            flash(f"Containers already stopped: {error_ids}", "danger")
+        else:
+            flash(f"Containers stopped: {len(ids) - len(error_ids)}", "success")
+            # print error ids if any
+            if error_ids:
+                flash(f"Containers already stopped: {error_ids}", "danger")
+        return jsonify({'message': 'Containers stopped successfully'}), 200
+    except Exception as e:
+        flash("API error, please try again", "danger")
+        return jsonify({'message': 'API Error'}), 400
+
+
 # prune system
 @app.route("/prune", methods=['POST'])
 def prune_system():
@@ -78,6 +138,7 @@ def prune_system():
     except docker.errors.APIError:
         flash("API error, please try again", "danger")
         return redirect(url_for('index'))
+
 
 @app.route("/images")
 def images():
