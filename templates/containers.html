@@ -266,6 +266,19 @@
 
     $('#btn-kill').click(function () {
         performAction('/kill', 'btn-kill');
-    })
+    });
+
+    $('#btn-restart').click(function () {
+        performAction('/restart', 'btn-restart');
+    });
+
+    $('#btn-pause').click(function () {
+        performAction('/pause', 'btn-pause');
+    });
+
+    $('#btn-resume').click(function () {
+        performAction('/resume', 'btn-resume');
+    });
+
 </script>
 {% endblock %}

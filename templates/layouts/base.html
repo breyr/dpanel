@@ -22,24 +22,24 @@
         <nav class="nav flex-column bg-dark text-light vh-100 py-2 px-3">
             <ul class="navbar-nav text-center">
                 <div class="navbar-brand text-center fw-bold">
-                    <p class="fs-3">DPanel</p>
+                    <p class="fs-5">DPanel</p>
                 </div>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('index') }}" data-bs-toggle="tooltip" title="Containers">
                         <i
-                            class="fa-solid fa-boxes-stacked fs-2 btn p-2 {% if current_page == 'containers' %} btn-primary {% else %} btn-outline-light {% endif %}"></i>
+                            class="fa-solid fa-boxes-stacked fs-4 btn p-2 {% if current_page == 'containers' %} btn-primary {% else %} btn-outline-light {% endif %}"></i>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('images') }}" data-bs-toggle="tooltip" title="Images">
                         <i
-                            class="fa-solid fa-image fs-2 btn p-2 {% if current_page == 'images' %} btn-primary {% else %} btn-outline-light {% endif %}"></i>
+                            class="fa-solid fa-image fs-4 btn p-2 {% if current_page == 'images' %} btn-primary {% else %} btn-outline-light {% endif %}"></i>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('volumes') }}" data-bs-toggle="tooltip" title="Volumes">
                         <i
-                            class="fa-solid fa-database fs-2 btn p-2 {% if current_page == 'volumes' %} btn-primary {% else %} btn-outline-light {% endif %}"></i>
+                            class="fa-solid fa-database fs-4 btn p-2 {% if current_page == 'volumes' %} btn-primary {% else %} btn-outline-light {% endif %}"></i>
                     </a>
                 </li>
             </ul>

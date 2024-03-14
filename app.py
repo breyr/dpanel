@@ -153,6 +153,90 @@ def kill_container():
         flash("API error, please try again", "danger")
         return jsonify({'message': 'API Error'}), 400
 
+
+# restart containers
+@app.route('/restart', methods=['POST'])
+def restart_container():
+    try:
+        data = request.get_json()
+        ids = data['ids']
+        for id in ids:
+            container = client.containers.get(id)
+            try:
+                # restart the container
+                container.restart()
+            except docker.error.APIError as e:
+                pass
+        flash(f"Containers restarted: {len(ids)}", "success")
+        return jsonify({'message': 'Containers restarted successfully'}), 200
+    except Exception as e:
+        flash("API error, please try again", "danger")
+        return jsonify({'message': 'API Error'}), 400
+    
+
+# pause containers
+@app.route('/pause', methods=['POST'])
+def pause_container():
+    try:
+        data = request.get_json()
+        ids = data['ids']
+        error_ids = []
+        for id in ids:
+            container = client.containers.get(id)
+            if container.status == 'paused':
+                error_ids.append(id[:12])
+            else:
+                try:
+                    # stop the container
+                    container.pause()
+                except docker.error.APIError as e:
+                    error_ids.append(id[:12])
+        # no containers were stopped
+        if len(ids) - len(error_ids) == 0:
+            flash(f"Containers already paused: {error_ids}", "danger")
+        else:
+            flash(f"Containers paused: {len(ids) - len(error_ids)}", "success")
+            # print error ids if any
+            if error_ids:
+                flash(f"Containers already paused: {error_ids}", "danger")
+        return jsonify({'message': 'Containers paused successfully'}), 200
+    except Exception as e:
+        flash("API error, please try again", "danger")
+        return jsonify({'message': 'API Error'}), 400
+    
+
+# resume containers
+@app.route('/resume', methods=['POST'])
+def resume_container():
+    try:
+        data = request.get_json()
+        ids = data['ids']
+        error_ids = []
+        for id in ids:
+            container = client.containers.get(id)
+            if container.status == 'running':
+                error_ids.append(id[:12])
+            else:
+                try:
+                    # stop the container
+                    container.unpause()
+                except docker.error.APIError as e:
+                    error_ids.append(id[:12])
+        # no containers were stopped
+        if len(ids) - len(error_ids) == 0:
+            flash(f"Containers already running: {error_ids}", "danger")
+        else:
+            flash(f"Containers resumed: {len(ids) - len(error_ids)}", "success")
+            # print error ids if any
+            if error_ids:
+                flash(f"Containers already running: {error_ids}", "danger")
+        return jsonify({'message': 'Containers resumed successfully'}), 200
+    except Exception as e:
+        flash("API error, please try again", "danger")
+        return jsonify({'message': 'API Error'}), 400
+        
+
+
 # prune system
 @app.route("/prune", methods=['POST'])
 def prune_system():
