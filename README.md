@@ -11,6 +11,7 @@ TODOS:
 - [X] Add other information to the table
 - [ ] New container button (using docker run commands)
 - [ ] Docker compose copy/paste feature
+- [ ] Searching ability for docker hub
 - [ ] Add information to images tab
 - [ ] Add information to volumes tab
 - [ ] networking tab?
