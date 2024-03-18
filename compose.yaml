@@ -8,6 +8,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - 80:80
+    restart: always
     network_mode: bridge
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
