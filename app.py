@@ -290,10 +290,10 @@ def prune_system():
             f"System pruned successfully: {num_deleted} containers deleted, {space_reclaimed} space reclaimed",
             "success",
         )
-        return redirect(url_for("index"))
+        return "", 200
     except docker.errors.APIError:
         publish_message_data("API error, please try again", "danger")
-        return redirect(url_for("index"))
+        return "", 400
 
 
 # homepage stream

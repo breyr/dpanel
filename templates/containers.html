@@ -59,14 +59,12 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form action="/prune" method="post">
-                        <div class="mb-3 text-danger">
-                            You are about to prune your system, do you wish to continue?
-                        </div>
-                        <input type="checkbox" class="btn-check" id="btncheck1" autocomplete="off">
-                        <label class="btn btn-outline-danger" for="btncheck1">Yes</label>
-                        <input type="submit" class="btn btn-danger disabled" value="prune" id="confirm-prune" />
-                    </form>
+                    <div class="mb-3 text-danger">
+                        You are about to prune your system, do you wish to continue?
+                    </div>
+                    <input type="checkbox" class="btn-check" id="btncheck1" autocomplete="off">
+                    <label class="btn btn-outline-danger" for="btncheck1">Yes</label>
+                    <button type="submit" class="btn btn-danger disabled" id="confirm-prune">prune</button>
                 </div>
             </div>
         </div>
@@ -153,6 +151,21 @@
         $('#btncheck1').change(function () {
             $('#confirm-prune').toggleClass('disabled');
         });
+
+        // handle prune button click
+        $('#confirm-prune').on('click', function () {
+            // hide prune modal
+            $("#pruneModal").modal('hide');
+            $.ajax({
+                url: '/prune',
+                method: 'POST',
+                success: function (result) {
+                },
+                error: function (result) {
+                    console.error(result);
+                }
+            })
+        })
 
         // handle select all checkbox change
         $('#select-all').change(function () {
