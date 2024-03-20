@@ -156,6 +156,9 @@
         $('#confirm-prune').on('click', function () {
             // hide prune modal
             $("#pruneModal").modal('hide');
+            // uncheck box for next opening of modal
+            $("#btncheck1").prop('checked', false);
+            $("#confirm-prune").toggleClass('disabled');
             $.ajax({
                 url: '/prune',
                 method: 'POST',
