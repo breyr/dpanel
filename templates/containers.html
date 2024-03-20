@@ -172,7 +172,7 @@
                     tr.append($("<td>").text(container.Config.Image));
                     tr.append($("<td>").text(container.NetworkSettings.IPAddress));
                     tr.append($("<td>").html(getPortBindings(container.HostConfig.PortBindings)));
-                    tr.append($("<td>").html('<button class="transparent-btn" onclick="getInfo(\'' + container.Id + '\')"><i class="bi bi-info-circle text-primary"></i></button>'));
+                    tr.append($("<td>").html('<button class="transparent-btn" onclick="getInfo(\'' + container.Id + '\')"><i class="bi bi-info-circle text-primary"></i></button>' + '<button class="transparent-btn" onclick="getStats(\'' + container.Id + '\')"><i class="bi bi-info-circle text-primary"></i></button>'));
                     tbody.append(tr);
                 });
                 dfd.resolve(); // Resolve the Deferred when the AJAX call is done

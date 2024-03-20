@@ -1,11 +1,39 @@
-from flask import Flask, render_template, jsonify, request, flash, redirect, url_for
-import docker
-import secrets
+from flask import (
+    Flask,
+    render_template,
+    jsonify,
+    request,
+    flash,
+    redirect,
+    url_for,
+    Response,
+)
+import docker, secrets, redis, json, time, threading
 
 
 app = Flask(__name__)
 app.secret_key = secrets.token_bytes(16)
 client = docker.from_env()
+r = redis.StrictRedis(host="host.docker.internal", port=6379, db=0)
+
+
+def publish_container_stats():
+    for container in client.containers.list():
+        stats = container.stats(stream=False)
+        stats_json = json.dumps(stats)
+        r.publish(f"container_metrics_{container.id}", stats_json)
+
+
+def start_publishing_container_stats():
+    while True:
+        # every 5 seconds publish stats
+        publish_container_stats()
+        time.sleep(5)
+
+
+# background thread for publishing stats
+# daemon True prevents this thread from exiting the program
+threading.Thread(target=start_publishing_container_stats, daemon=True).start()
 
 
 @app.route("/")
@@ -257,6 +285,26 @@ def prune_system():
     except docker.errors.APIError:
         flash("API error, please try again", "danger")
         return redirect(url_for("index"))
+
+
+# container stats stream
+@app.route("/container_stream/<container_id>")
+def container_stream(container_id):
+    def event_stream():
+        pubsub = r.pubsub()
+        # subscribe to specific id
+        pubsub.subscribe(f"container_metrics_{container_id}")
+        for message in pubsub.listen():
+            if message["type"] == "message":
+                yield f"data: {message['data'].decode('utf-8')}\n\n"
+
+    return Response(event_stream(), content_type="text/event-stream")
+
+
+# template rendering for stats page
+@app.route("/stats/<container_id>")
+def stats(container_id):
+    return render_template("stats.html", id=container_id)
 
 
 @app.route("/images")

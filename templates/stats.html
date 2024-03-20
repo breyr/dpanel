@@ -1,0 +1,21 @@
+{% extends "layouts/base.html" %}
+{% block title %}Stats | DPanel{% endblock %}
+{% block main %}
+<h1>Stats for {{ id }}</h1>
+<div id="metrics-container"></div>
+{% block scripts %}
+<script>
+    // get container id from url
+    // the url is /stats/containerId
+    var path = window.location.pathname; // This will be "/stats/containerId"
+    var parts = path.split('/'); // This will be ["", "stats", "containerId"]
+    var containerId = parts[parts.length - 1]; // This will be "containerId"
+    var source = new EventSource('/container_stream/' + containerId);
+    source.onmessage = function (event) {
+        var data = JSON.parse(event.data);
+        // Update UI with container metrics
+        document.getElementById('metrics-container').innerText = JSON.stringify(data);
+    };
+</script>
+{% endblock %}
+{% endblock %}
