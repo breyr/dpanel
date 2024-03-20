@@ -4,7 +4,7 @@ services:
   web:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.flask
     image: dpanel:latest
     ports:
       - 5001:5000
@@ -13,6 +13,15 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - .:/app # necessary for development
+    depends_on:
+      - redis
+  pubsub:
+    build:
+      context: .
+      dockerfile: Dockerfile.pubsub
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: always
     depends_on:
       - redis
   redis:

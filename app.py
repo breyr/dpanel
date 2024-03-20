@@ -16,41 +16,9 @@ client = docker.from_env()
 r = redis.StrictRedis(host="host.docker.internal", port=6379, db=0)
 
 
-def publish_homepage_data():
-    # TODO: add data for images and volumes and anythign else on the homepage
-    containers = client.containers.list(all=True)
-    containers_json = json.dumps([container.attrs for container in containers])
-    r.publish(f"containers_homepage", containers_json)
-
-
-def start_publishing_homepage_data():
-    while True:
-        publish_homepage_data()
-        time.sleep(1)
-
-
-def publish_container_stats():
-    for container in client.containers.list():
-        stats = container.stats(stream=False)
-        stats_json = json.dumps(stats)
-        r.publish(f"container_metrics_{container.id}", stats_json)
-
-
-def start_publishing_container_stats():
-    while True:
-        # every 5 seconds publish stats
-        publish_container_stats()
-        time.sleep(5)
-
-
+# for publishing messages, needs to be used within the Flask app
 def publish_message_data(message, category):
     r.publish("flask_messages", json.dumps({"text": message, "category": category}))
-
-
-# background thread for publishing stats
-# daemon True prevents this thread from exiting the program
-threading.Thread(target=start_publishing_container_stats, daemon=True).start()
-threading.Thread(target=start_publishing_homepage_data, daemon=True).start()
 
 
 @app.route("/")
