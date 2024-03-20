@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     image: dpanel:latest
     ports:
-      - 80:80
+      - 5000:5000
     restart: always
     network_mode: bridge
     volumes:
