@@ -7,7 +7,7 @@ from flask import (
     url_for,
     Response,
 )
-import docker, secrets, redis, json, time, threading
+import docker, secrets, redis, json
 
 
 app = Flask(__name__)
