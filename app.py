@@ -299,42 +299,68 @@ def prune_system():
 # homepage stream
 @app.route("/homepage_stream")
 def homepage_stream():
+    pubsub = r.pubsub()
+    pubsub.subscribe("containers_homepage")
+
     def event_stream():
-        pubsub = r.pubsub()
-        pubsub.subscribe("containers_homepage")
         for message in pubsub.listen():
             if message["type"] == "message":
                 yield f"data: {message['data'].decode('utf-8')}\n\n"
 
-    return Response(event_stream(), content_type="text/event-stream")
+    res = Response(event_stream(), content_type="text/event-stream")
+
+    def close():
+        pubsub.unsubscribe(f"containers_homepage")
+        pubsub.close()
+
+    res.call_on_close(close)
+
+    return res
 
 
 # container stats stream
 @app.route("/container_stream/<container_id>")
 def container_stream(container_id):
+    pubsub = r.pubsub()
+    pubsub.subscribe(f"container_metrics_{container_id}")
+
     def event_stream():
-        pubsub = r.pubsub()
-        # subscribe to specific id
-        pubsub.subscribe(f"container_metrics_{container_id}")
         for message in pubsub.listen():
             if message["type"] == "message":
                 yield f"data: {message['data'].decode('utf-8')}\n\n"
 
-    return Response(event_stream(), content_type="text/event-stream")
+    res = Response(event_stream(), content_type="text/event-stream")
+
+    def close():
+        pubsub.unsubscribe(f"container_metrics_{container_id}")
+        pubsub.close()
+
+    res.call_on_close(close)
+
+    return res
 
 
 # get messages, returns server messages created by publish_message_data()
 @app.route("/messages")
 def messages():
+    pubsub = r.pubsub()
+    # subscribe to specific id
+    pubsub.subscribe("flask_messages")
+
     def event_stream():
-        pubsub = r.pubsub()
-        # subscribe to specific id
-        pubsub.subscribe("flask_messages")
         for message in pubsub.listen():
             if message["type"] == "message":
                 yield f"data: {message['data'].decode('utf-8')}\n\n"
 
-    return Response(event_stream(), content_type="text/event-stream")
+    res = Response(event_stream(), content_type="text/event-stream")
+
+    def close():
+        pubsub.unsubscribe("flask_messages")
+        pubsub.close()
+
+    res.call_on_close(close)
+
+    return res
 
 
 # template rendering for stats page
