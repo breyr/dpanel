@@ -3,8 +3,7 @@ version: "3.9"
 services:
   web:
     build:
-      context: .
-      dockerfile: Dockerfile.flask
+      context: ./web
     image: dpanel:latest
     ports:
       - 5001:5001
@@ -12,13 +11,12 @@ services:
     network_mode: bridge
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - .:/app # necessary for development
+      - ./web:/app # bind mount for development
     depends_on:
       - redis
   pubsub:
     build:
-      context: .
-      dockerfile: Dockerfile.pubsub
+      context: ./pubsub
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     restart: always

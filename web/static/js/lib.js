@@ -1,5 +1,5 @@
 function getInfo(containerId) {
-    fetch('/info/' + containerId)
+    fetch('/actions/info/' + containerId)
         .then(response => response.json())
         .then(data => {
             // Create a new Blob from the JSON string
@@ -14,5 +14,5 @@ function getInfo(containerId) {
 }
 
 function getStats(containerId) {
-    window.open('/stats/' + containerId, '_blank');
+    window.open('/actions/stats/' + containerId, '_blank');
 }
