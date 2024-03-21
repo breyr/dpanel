@@ -104,8 +104,8 @@
         $("#loading").show();
 
         // Get event sources
-        var homepageSource = new EventSource('/homepage_stream');
-        var messagesSource = new EventSource('/messages');
+        var homepageSource = new EventSource('/streaming/homepage');
+        var messagesSource = new EventSource('/streaming/messages');
 
         // Function to close EventSource connections
         // close() calls the call_on_close in server and unsubscribes from topic
@@ -174,7 +174,7 @@
             $("#btncheck1").prop('checked', false);
             $("#confirm-prune").toggleClass('disabled');
             $.ajax({
-                url: '/prune',
+                url: '/actions/prune',
                 method: 'POST',
                 success: function (result) {
                 },
@@ -253,31 +253,31 @@
     }
 
     $('#btn-delete').click(function () {
-        performAction('/delete', 'btn-delete');
+        performAction('/actions/delete', 'btn-delete');
     });
 
     $('#btn-start').click(function () {
-        performAction('/start', 'btn-start');
+        performAction('/actions/start', 'btn-start');
     });
 
     $('#btn-stop').click(function () {
-        performAction('/stop', 'btn-stop');
+        performAction('/actions/stop', 'btn-stop');
     });
 
     $('#btn-kill').click(function () {
-        performAction('/kill', 'btn-kill');
+        performAction('/actions/kill', 'btn-kill');
     });
 
     $('#btn-restart').click(function () {
-        performAction('/restart', 'btn-restart');
+        performAction('/actions/restart', 'btn-restart');
     });
 
     $('#btn-pause').click(function () {
-        performAction('/pause', 'btn-pause');
+        performAction('/actions/pause', 'btn-pause');
     });
 
     $('#btn-resume').click(function () {
-        performAction('/resume', 'btn-resume');
+        performAction('/actions/resume', 'btn-resume');
     });
 
 </script>
