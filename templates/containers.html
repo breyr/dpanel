@@ -103,8 +103,23 @@
         $("#spinner").hide();
         $("#loading").show();
 
-        var source = new EventSource('/homepage_stream');
-        source.onmessage = function (event) {
+        // Get event sources
+        var homepageSource = new EventSource('/homepage_stream');
+        var messagesSource = new EventSource('/messages');
+
+        // Function to close EventSource connections
+        // close() calls the call_on_close in server and unsubscribes from topic
+        function closeEventSources() {
+            homepageSource.close();
+            messagesSource.close();
+        }
+
+        // Close connections when the page is refreshed or closed
+        $(window).on('beforeunload', function () {
+            closeEventSources();
+        });
+
+        homepageSource.onmessage = function (event) {
             var data = JSON.parse(event.data);
             // Update UI with container metrics
             var tbody = $("table tbody");
@@ -136,7 +151,6 @@
             $("#loading").hide();
         };
 
-        var messagesSource = new EventSource('/messages');
         messagesSource.onmessage = function (event) {
             var data = JSON.parse(event.data);
             $('#message-container').append(

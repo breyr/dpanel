@@ -7,7 +7,7 @@ from flask import (
     url_for,
     Response,
 )
-import docker, secrets, redis, json
+import docker, secrets, redis, json, time
 
 
 app = Flask(__name__)
@@ -303,7 +303,11 @@ def homepage_stream():
     pubsub.subscribe("containers_homepage")
 
     def event_stream():
+        start_time = time.time()
         for message in pubsub.listen():
+            elapsed_time = time.time() - start_time
+            if elapsed_time >= 60:
+                break  # close connection if no messages received for 60 seconds
             if message["type"] == "message":
                 yield f"data: {message['data'].decode('utf-8')}\n\n"
 
@@ -325,7 +329,11 @@ def container_stream(container_id):
     pubsub.subscribe(f"container_metrics_{container_id}")
 
     def event_stream():
+        start_time = time.time()
         for message in pubsub.listen():
+            elapsed_time = time.time() - start_time
+            if elapsed_time >= 60:
+                break  # close connection if no messages received for 60 seconds
             if message["type"] == "message":
                 yield f"data: {message['data'].decode('utf-8')}\n\n"
 
@@ -348,7 +356,11 @@ def messages():
     pubsub.subscribe("flask_messages")
 
     def event_stream():
+        start_time = time.time()
         for message in pubsub.listen():
+            elapsed_time = time.time() - start_time
+            if elapsed_time >= 60:
+                break  # close connection if no messages received for 60 seconds
             if message["type"] == "message":
                 yield f"data: {message['data'].decode('utf-8')}\n\n"
 
