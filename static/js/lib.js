@@ -12,3 +12,7 @@ function getInfo(containerId) {
             window.open(url, '_blank');
         });
 }
+
+function getStats(containerId) {
+    window.open('/stats/' + containerId, '_blank');
+}

@@ -1,11 +1,24 @@
-from flask import Flask, render_template, jsonify, request, flash, redirect, url_for
-import docker
-import secrets
+from flask import (
+    Flask,
+    render_template,
+    jsonify,
+    request,
+    redirect,
+    url_for,
+    Response,
+)
+import docker, secrets, redis, json, time
 
 
 app = Flask(__name__)
 app.secret_key = secrets.token_bytes(16)
 client = docker.from_env()
+r = redis.StrictRedis(host="host.docker.internal", port=6379, db=0)
+
+
+# for publishing messages, needs to be used within the Flask app
+def publish_message_data(message, category):
+    r.publish("flask_messages", json.dumps({"text": message, "category": category}))
 
 
 @app.route("/")
@@ -28,17 +41,21 @@ def create_container():
         image = request.form.get("image")
         # create container
         container = client.containers.create(image)
-        flash(f"Container {container.short_id} created successfully", "success")
+        publish_message_data(
+            f"Container {container.short_id} created successfully", "success"
+        )
         return redirect(url_for("index"))
     except docker.errors.ImageNotFound:
         # try pulling the image and creating
         try:
             image = client.images.pull(image, tag="latest")
             container = client.containers.create(image.id)
-            flash(f"Container {container.short_id} created successfully", "success")
+            publish_message_data(
+                f"Container {container.short_id} created successfully", "success"
+            )
             return redirect(url_for("index"))
         except docker.errors.APIError:
-            flash("API error, please try again", "danger")
+            publish_message_data("API error, please try again", "danger")
             return redirect(url_for("index"))
 
 
@@ -53,10 +70,10 @@ def delete_container():
             container = client.containers.get(id)
             # forcibly kills and removes container
             container.remove(v=False, link=False, force=True)
-        flash(f"Containers deleted: {len(ids)}", "success")
+        publish_message_data(f"Containers deleted: {len(ids)}", "success")
         return jsonify({"message": "Containers deleted successfully"}), 200
     except docker.errors.APIError:
-        flash("API error, please try again", "danger")
+        publish_message_data("API error, please try again", "danger")
         return jsonify({"message": "API Error"}), 400
 
 
@@ -79,15 +96,19 @@ def start_container():
                     error_ids.append(id[:12])
         # no containers were started
         if len(ids) - len(error_ids) == 0:
-            flash(f"Containers already started: {error_ids}", "danger")
+            publish_message_data(f"Containers already started: {error_ids}", "danger")
         else:
-            flash(f"Containers started: {len(ids) - len(error_ids)}", "success")
+            publish_message_data(
+                f"Containers started: {len(ids) - len(error_ids)}", "success"
+            )
             # print error ids if any
             if error_ids:
-                flash(f"Containers already started: {error_ids}", "danger")
+                publish_message_data(
+                    f"Containers already started: {error_ids}", "danger"
+                )
         return jsonify({"message": "Containers started successfully"}), 200
     except Exception as e:
-        flash("API error, please try again", "danger")
+        publish_message_data("API error, please try again", "danger")
         return jsonify({"message": "API Error"}), 400
 
 
@@ -110,15 +131,19 @@ def stop_container():
                     error_ids.append(id[:12])
         # no containers were stopped
         if len(ids) - len(error_ids) == 0:
-            flash(f"Containers already stopped: {error_ids}", "danger")
+            publish_message_data(f"Containers already stopped: {error_ids}", "danger")
         else:
-            flash(f"Containers stopped: {len(ids) - len(error_ids)}", "success")
+            publish_message_data(
+                f"Containers stopped: {len(ids) - len(error_ids)}", "success"
+            )
             # print error ids if any
             if error_ids:
-                flash(f"Containers already stopped: {error_ids}", "danger")
+                publish_message_data(
+                    f"Containers already stopped: {error_ids}", "danger"
+                )
         return jsonify({"message": "Containers stopped successfully"}), 200
     except Exception as e:
-        flash("API error, please try again", "danger")
+        publish_message_data("API error, please try again", "danger")
         return jsonify({"message": "API Error"}), 400
 
 
@@ -141,15 +166,19 @@ def kill_container():
                     error_ids.append(id[:12])
         # no containers were stopped
         if len(ids) - len(error_ids) == 0:
-            flash(f"Containers already killed: {error_ids}", "danger")
+            publish_message_data(f"Containers already killed: {error_ids}", "danger")
         else:
-            flash(f"Containers killed: {len(ids) - len(error_ids)}", "success")
+            publish_message_data(
+                f"Containers killed: {len(ids) - len(error_ids)}", "success"
+            )
             # print error ids if any
             if error_ids:
-                flash(f"Containers already killed: {error_ids}", "danger")
+                publish_message_data(
+                    f"Containers already killed: {error_ids}", "danger"
+                )
         return jsonify({"message": "Containers killed successfully"}), 200
     except Exception as e:
-        flash("API error, please try again", "danger")
+        publish_message_data("API error, please try again", "danger")
         return jsonify({"message": "API Error"}), 400
 
 
@@ -166,10 +195,10 @@ def restart_container():
                 container.restart()
             except docker.error.APIError as e:
                 pass
-        flash(f"Containers restarted: {len(ids)}", "success")
+        publish_message_data(f"Containers restarted: {len(ids)}", "success")
         return jsonify({"message": "Containers restarted successfully"}), 200
     except Exception as e:
-        flash("API error, please try again", "danger")
+        publish_message_data("API error, please try again", "danger")
         return jsonify({"message": "API Error"}), 400
 
 
@@ -192,15 +221,19 @@ def pause_container():
                     error_ids.append(id[:12])
         # no containers were stopped
         if len(ids) - len(error_ids) == 0:
-            flash(f"Containers already paused: {error_ids}", "danger")
+            publish_message_data(f"Containers already paused: {error_ids}", "danger")
         else:
-            flash(f"Containers paused: {len(ids) - len(error_ids)}", "success")
+            publish_message_data(
+                f"Containers paused: {len(ids) - len(error_ids)}", "success"
+            )
             # print error ids if any
             if error_ids:
-                flash(f"Containers already paused: {error_ids}", "danger")
+                publish_message_data(
+                    f"Containers already paused: {error_ids}", "danger"
+                )
         return jsonify({"message": "Containers paused successfully"}), 200
     except Exception as e:
-        flash("API error, please try again", "danger")
+        publish_message_data("API error, please try again", "danger")
         return jsonify({"message": "API Error"}), 400
 
 
@@ -223,15 +256,19 @@ def resume_container():
                     error_ids.append(id[:12])
         # no containers were stopped
         if len(ids) - len(error_ids) == 0:
-            flash(f"Containers already running: {error_ids}", "danger")
+            publish_message_data(f"Containers already running: {error_ids}", "danger")
         else:
-            flash(f"Containers resumed: {len(ids) - len(error_ids)}", "success")
+            publish_message_data(
+                f"Containers resumed: {len(ids) - len(error_ids)}", "success"
+            )
             # print error ids if any
             if error_ids:
-                flash(f"Containers already running: {error_ids}", "danger")
+                publish_message_data(
+                    f"Containers already running: {error_ids}", "danger"
+                )
         return jsonify({"message": "Containers resumed successfully"}), 200
     except Exception as e:
-        flash("API error, please try again", "danger")
+        publish_message_data("API error, please try again", "danger")
         return jsonify({"message": "API Error"}), 400
 
 
@@ -249,14 +286,99 @@ def prune_system():
         else:
             num_deleted = 0
         space_reclaimed = pruned_containers.get("SpaceReclaimed", 0)
-        flash(
+        publish_message_data(
             f"System pruned successfully: {num_deleted} containers deleted, {space_reclaimed} space reclaimed",
             "success",
         )
-        return redirect(url_for("index"))
+        return "", 200
     except docker.errors.APIError:
-        flash("API error, please try again", "danger")
-        return redirect(url_for("index"))
+        publish_message_data("API error, please try again", "danger")
+        return "", 400
+
+
+# homepage stream
+@app.route("/homepage_stream")
+def homepage_stream():
+    pubsub = r.pubsub()
+    pubsub.subscribe("containers_homepage")
+
+    def event_stream():
+        start_time = time.time()
+        for message in pubsub.listen():
+            elapsed_time = time.time() - start_time
+            if elapsed_time >= 60:
+                break  # close connection if no messages received for 60 seconds
+            if message["type"] == "message":
+                yield f"data: {message['data'].decode('utf-8')}\n\n"
+
+    res = Response(event_stream(), content_type="text/event-stream")
+
+    def close():
+        pubsub.unsubscribe(f"containers_homepage")
+        pubsub.close()
+
+    res.call_on_close(close)
+
+    return res
+
+
+# container stats stream
+@app.route("/container_stream/<container_id>")
+def container_stream(container_id):
+    pubsub = r.pubsub()
+    pubsub.subscribe(f"container_metrics_{container_id}")
+
+    def event_stream():
+        start_time = time.time()
+        for message in pubsub.listen():
+            elapsed_time = time.time() - start_time
+            if elapsed_time >= 60:
+                break  # close connection if no messages received for 60 seconds
+            if message["type"] == "message":
+                yield f"data: {message['data'].decode('utf-8')}\n\n"
+
+    res = Response(event_stream(), content_type="text/event-stream")
+
+    def close():
+        pubsub.unsubscribe(f"container_metrics_{container_id}")
+        pubsub.close()
+
+    res.call_on_close(close)
+
+    return res
+
+
+# get messages, returns server messages created by publish_message_data()
+@app.route("/messages")
+def messages():
+    pubsub = r.pubsub()
+    # subscribe to specific id
+    pubsub.subscribe("flask_messages")
+
+    def event_stream():
+        start_time = time.time()
+        for message in pubsub.listen():
+            elapsed_time = time.time() - start_time
+            if elapsed_time >= 60:
+                break  # close connection if no messages received for 60 seconds
+            if message["type"] == "message":
+                yield f"data: {message['data'].decode('utf-8')}\n\n"
+
+    res = Response(event_stream(), content_type="text/event-stream")
+
+    def close():
+        pubsub.unsubscribe("flask_messages")
+        pubsub.close()
+
+    res.call_on_close(close)
+
+    return res
+
+
+# template rendering for stats page
+@app.route("/stats/<container_id>")
+def stats(container_id):
+    return render_template("stats.html", id=container_id)
 
 
 @app.route("/images")
@@ -276,4 +398,4 @@ def info(containerId):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5001, debug=True)

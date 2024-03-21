@@ -19,11 +19,6 @@
             delete</button>
     </div>
     <div>
-        <button class="btn btn-primary" type="button" id="refresh-btn">
-            <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true" id="spinner"></span>
-            <i class="fa-solid fa-arrows-rotate" id="refresh-icon"></i>
-            <span id="refresh-text">refresh list</span>
-        </button>
         <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#pruneModal">
             <i class="fa-solid fa-tree"></i> prune
         </button>
@@ -64,14 +59,12 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form action="/prune" method="post">
-                        <div class="mb-3 text-danger">
-                            You are about to prune your system, do you wish to continue?
-                        </div>
-                        <input type="checkbox" class="btn-check" id="btncheck1" autocomplete="off">
-                        <label class="btn btn-outline-danger" for="btncheck1">Yes</label>
-                        <input type="submit" class="btn btn-danger disabled" value="prune" id="confirm-prune" />
-                    </form>
+                    <div class="mb-3 text-danger">
+                        You are about to prune your system, do you wish to continue?
+                    </div>
+                    <input type="checkbox" class="btn-check" id="btncheck1" autocomplete="off">
+                    <label class="btn btn-outline-danger" for="btncheck1">Yes</label>
+                    <button type="submit" class="btn btn-danger disabled" id="confirm-prune">prune</button>
                 </div>
             </div>
         </div>
@@ -100,46 +93,96 @@
         </div>
     </div>
 </section>
-<section class="position-absolute bottom-0 end-0 w-25 me-3">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    {% for category, message in messages %}
-    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    {% endfor %}
-    {% endif %}
-    {% endwith %}
+<section class="position-absolute bottom-0 end-0 w-25 me-3" id="message-container">
 </section>
 {% endblock %}
 {% block scripts %}
 <script>
     $(document).ready(function () {
+
         $("#spinner").hide();
         $("#loading").show();
-        loadData().done(function () {
-            $("#loading").hide();
+
+        // Get event sources
+        var homepageSource = new EventSource('/homepage_stream');
+        var messagesSource = new EventSource('/messages');
+
+        // Function to close EventSource connections
+        // close() calls the call_on_close in server and unsubscribes from topic
+        function closeEventSources() {
+            homepageSource.close();
+            messagesSource.close();
+        }
+
+        // Close connections when the page is refreshed or closed
+        $(window).on('beforeunload', function () {
+            closeEventSources();
         });
 
-        $("#refresh-btn").click(function () {
-            $("#refresh-icon").hide();
-            $("#spinner").show();
-            $("#refresh-text").text("Loading...");
-            $("#refresh-btn").addClass("disabled");
+        homepageSource.onmessage = function (event) {
+            var data = JSON.parse(event.data);
+            // Update UI with container metrics
+            var tbody = $("table tbody");
+            $.each(data, function (i, container) {
+                var tr = tbody.find('#row-' + container.Id);
+                if (!tr.length) {
+                    // If the row does not exist, create it
+                    tr = $("<tr>").attr('id', 'row-' + container.Id);
+                    tr.append($("<td>").html('<input type="checkbox" class="tr-checkbox" value="' + container.Id + '" name="container"> <span class="spinner-grow spinner-grow-sm row-spinner d-none" role="status" aria-hidden="true"></span>'));
+                    tr.append($("<td>").attr('id', 'name-' + container.Id));
+                    tr.append($("<td>").attr('id', 'id-' + container.Id));
+                    tr.append($("<td>").attr('id', 'status-' + container.Id));
+                    tr.append($("<td>").attr('id', 'image-' + container.Id));
+                    tr.append($("<td>").attr('id', 'ip-' + container.Id));
+                    tr.append($("<td>").attr('id', 'port-' + container.Id));
+                    tr.append($("<td>").html('<button class="transparent-btn" onclick="getInfo(\'' + container.Id + '\')"><i class="bi bi-info-circle text-primary"></i></button>' + '<button class="transparent-btn" onclick="getStats(\'' + container.Id + '\')"><i class="bi bi-bar-chart-fill text-primary"></i></button>'));
+                    tbody.append(tr);
+                }
 
-            loadData().done(function () {
-                $("#spinner").hide();
-                $("#refresh-icon").show();
-                $("#refresh-text").text("refresh list");
-                $("#refresh-btn").removeClass("disabled");
+                // Update the row with the new data
+                $('#name-' + container.Id).text(container.Name.substring(1));
+                $('#id-' + container.Id).text(container.Id.substring(0, 12));
+                $('#status-' + container.Id).html('<span class="badge bg-' + getStatusClass(container.State.Status) + '">' + container.State.Status + '</span>');
+                $('#image-' + container.Id).text(container.Config.Image);
+                $('#ip-' + container.Id).text(container.NetworkSettings.IPAddress);
+                $('#port-' + container.Id).html(getPortBindings(container.HostConfig.PortBindings));
             });
-        });
+
+            $("#loading").hide();
+        };
+
+        messagesSource.onmessage = function (event) {
+            var data = JSON.parse(event.data);
+            $('#message-container').append(
+                '<div class="alert alert-' + data.category + ' alert-dismissible fade show" role="alert">' +
+                data.text +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+                '</div>'
+            );
+        };
 
         // handle prune check box
         $('#btncheck1').change(function () {
             $('#confirm-prune').toggleClass('disabled');
         });
+
+        // handle prune button click
+        $('#confirm-prune').on('click', function () {
+            // hide prune modal
+            $("#pruneModal").modal('hide');
+            // uncheck box for next opening of modal
+            $("#btncheck1").prop('checked', false);
+            $("#confirm-prune").toggleClass('disabled');
+            $.ajax({
+                url: '/prune',
+                method: 'POST',
+                success: function (result) {
+                },
+                error: function (result) {
+                    console.error(result);
+                }
+            })
+        })
 
         // handle select all checkbox change
         $('#select-all').change(function () {
@@ -154,33 +197,6 @@
             }
         });
     });
-
-    function loadData() {
-        var dfd = $.Deferred();
-
-        setTimeout(function () {
-            $.getJSON("{{ url_for('get_containers') }}", function (data) {
-                var tbody = $("table tbody");
-                tbody.empty();
-                $.each(data, function (i, container) {
-                    var tr = $("<tr>");
-                    tr.append($("<td>").html('<input type="checkbox" class="tr-checkbox" value="' + container.Id + '" name="container"> <span class="spinner-grow spinner-grow-sm row-spinner d-none" role="status" aria-hidden="true"></span>'));
-                    // substring(1) because all containers have a name starting with / for some reason
-                    tr.append($("<td>").text(container.Name.substring(1)));
-                    tr.append($("<td>").text(container.Id.substring(0, 12)));
-                    tr.append($("<td>").html('<span class="badge bg-' + getStatusClass(container.State.Status) + '">' + container.State.Status + '</span>'));
-                    tr.append($("<td>").text(container.Config.Image));
-                    tr.append($("<td>").text(container.NetworkSettings.IPAddress));
-                    tr.append($("<td>").html(getPortBindings(container.HostConfig.PortBindings)));
-                    tr.append($("<td>").html('<button class="transparent-btn" onclick="getInfo(\'' + container.Id + '\')"><i class="bi bi-info-circle text-primary"></i></button>'));
-                    tbody.append(tr);
-                });
-                dfd.resolve(); // Resolve the Deferred when the AJAX call is done
-            });
-        }, 300);
-
-        return dfd.promise(); // Return the promise
-    }
 
     function getStatusClass(status) {
         switch (status) {
@@ -199,20 +215,6 @@
             });
         });
         return result;
-    }
-
-    // check if there's any information in the session storage
-    if (sessionStorage.getItem('actionCompleted')) {
-        // for each checked row, hide the spinner and clear the action text
-        $('.tr-checkbox:checked').each(function () {
-            $(this).show();
-            var row = $(this).closest('tr');
-            row.find('.row-spinner').toggleClass('d-none');
-            $('#' + actionBtnId).prop('disabled', false);
-        });
-
-        // clear the information in the session storage
-        sessionStorage.removeItem('actionCompleted');
     }
 
     function performAction(url, actionBtnId) {
@@ -238,16 +240,14 @@
             data: JSON.stringify({ 'ids': checkedIds }),
             contentType: 'application/json',
             success: function (result) {
-                // store the necessary information in the session storage
-                sessionStorage.setItem('actionCompleted', true);
-                // redirect to the index page
-                window.location.href = '/';
-            },
-            error: function (request, status, error) {
-                // store the necessary information in the session storage
-                sessionStorage.setItem('actionCompleted', true);
-                // handle errors
-                window.location.href = '/';
+                // hide spinners
+                $('.tr-checkbox:checked').each(function () {
+                    $(this).show();
+                    var row = $(this).closest('tr');
+                    row.find('.row-spinner').toggleClass('d-none');
+                });
+                // re-enable all action buttons
+                $('#' + actionBtnId).prop('disabled', false);
             }
         });
     }
