@@ -119,10 +119,12 @@
             closeEventSources();
         });
 
+        var tbody = $("table tbody");
+        var previousState = {};
+
         homepageSource.onmessage = function (event) {
             var data = JSON.parse(event.data);
-            // Update UI with container metrics
-            var tbody = $("table tbody");
+
             $.each(data, function (i, container) {
                 var tr = tbody.find('#row-' + container.Id);
                 if (!tr.length) {
@@ -139,13 +141,28 @@
                     tbody.append(tr);
                 }
 
-                // Update the row with the new data
-                $('#name-' + container.Id).text(container.Name.substring(1));
-                $('#id-' + container.Id).text(container.Id.substring(0, 12));
-                $('#status-' + container.Id).html('<span class="badge bg-' + getStatusClass(container.State.Status) + '">' + container.State.Status + '</span>');
-                $('#image-' + container.Id).text(container.Config.Image);
-                $('#ip-' + container.Id).text(container.NetworkSettings.IPAddress);
-                $('#port-' + container.Id).html(getPortBindings(container.HostConfig.PortBindings));
+                // Update the cells with the new data only if it has changed
+                if (previousState[container.Id]?.Name !== container.Name) {
+                    $('#name-' + container.Id).text(container.Name.substring(1));
+                }
+                if (previousState[container.Id]?.Id !== container.Id) {
+                    $('#id-' + container.Id).text(container.Id.substring(0, 12));
+                }
+                if (previousState[container.Id]?.State?.Status !== container.State.Status) {
+                    $('#status-' + container.Id).html('<span class="badge bg-' + getStatusClass(container.State.Status) + '">' + container.State.Status + '</span>');
+                }
+                if (previousState[container.Id]?.Config?.Image !== container.Config.Image) {
+                    $('#image-' + container.Id).text(container.Config.Image);
+                }
+                if (previousState[container.Id]?.NetworkSettings?.IPAddress !== container.NetworkSettings.IPAddress) {
+                    $('#ip-' + container.Id).text(container.NetworkSettings.IPAddress);
+                }
+                if (previousState[container.Id]?.HostConfig?.PortBindings !== container.HostConfig.PortBindings) {
+                    $('#port-' + container.Id).html(getPortBindings(container.HostConfig.PortBindings));
+                }
+
+                // Store the current state of the container for the next update
+                previousState[container.Id] = container;
             });
 
             $("#loading").hide();
