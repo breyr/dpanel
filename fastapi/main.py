@@ -1,13 +1,18 @@
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI
 from sse_starlette import EventSourceResponse
-import asyncio
+from fastapi.requests import Request
+from fastapi.middleware.cors import CORSMiddleware
 import aioredis
-import logging
 
-app = FastAPI(docs_url="/api/docs")
-_log = logging.getLogger(__name__)
-_log.setLevel(logging.INFO)
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Define global variables
 redis = None
@@ -32,29 +37,18 @@ app.add_event_handler("startup", setup_redis)
 # Register shutdown event handler
 app.add_event_handler("shutdown", close_redis)
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
-    allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
-)
+
+async def subscribeContainerList(req: Request):
+    pubsub = redis.pubsub()
+    await pubsub.subscribe("containers_homepage")
+    async for message in pubsub.listen():
+        if await req.is_disconnected():
+            await pubsub.close()
+            break
+        if message["type"] == "message" and message["data"] != 1:
+            yield f"data: {message['data'].decode('utf-8')}\n\n"
 
 
 @app.get("/api/streams/containerlist")
-async def containers_info_stream(req: Request):
-    global redis
-    pubsub = redis.pubsub()
-    await pubsub.subscribe("containers_homepage")
-
-    async def event_stream():
-        while True:
-            disconnected = await req.is_disconnected()
-            if disconnected:
-                break
-            message = await pubsub.get_message()
-            if message and message["data"] != 1:
-                yield f"data: {message['data'].decode('utf-8')}\n\n"
-
-    return EventSourceResponse(event_stream())
+async def container_list(req: Request):
+    return EventSourceResponse(subscribeContainerList(req))

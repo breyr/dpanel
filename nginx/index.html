@@ -33,12 +33,6 @@
     <script src="./static/js/lib.js'"></script>
     <script src="./static/js/customJquery.js"></script>
     <script id="js-imports"></script>
-    <script>
-        var source = new EventSource('http://localhost:5002/api/streams/containerlist');
-        source.onmessage = function (event) {
-            alert(event.data);
-        }
-    </script>
 </body>
 
 </html>
