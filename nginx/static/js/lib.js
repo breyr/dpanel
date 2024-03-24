@@ -35,9 +35,12 @@ $(document).ready(function () {
     $("#spinner").hide();
     $("#loading").show();
 
+    // AJAX in the blocks
+    // $("#primary-block").load("./static/pages/containers.html");
+
     // Get event sources
-    var homepageSource = new EventSource('/streaming/homepage');
-    var messagesSource = new EventSource('/streaming/messages');
+    var homepageSource = new EventSource('http://localhost:5002/api/streams/containerlist');
+    var messagesSource = new EventSource('http://localhost:5001/streaming/messages');
 
     // Function to close EventSource connections
     // close() calls the call_on_close in server and unsubscribes from topic
@@ -53,48 +56,47 @@ $(document).ready(function () {
 
     var tbody = $("table tbody");
     var previousState = {};
-
     homepageSource.onmessage = function (event) {
         var data = JSON.parse(event.data);
-
+        console.log(data);
         $.each(data, function (i, container) {
-            var tr = tbody.find('#row-' + container.Id);
+            var tr = tbody.find('#row-' + container.ID);
             if (!tr.length) {
                 // If the row does not exist, create it
-                tr = $("<tr>").attr('id', 'row-' + container.Id);
-                tr.append($("<td>").html('<input type="checkbox" class="tr-checkbox" value="' + container.Id + '" name="container"> <span class="spinner-grow spinner-grow-sm row-spinner d-none" role="status" aria-hidden="true"></span>'));
-                tr.append($("<td>").attr('id', 'name-' + container.Id));
-                tr.append($("<td>").attr('id', 'id-' + container.Id));
-                tr.append($("<td>").attr('id', 'status-' + container.Id));
-                tr.append($("<td>").attr('id', 'image-' + container.Id));
-                tr.append($("<td>").attr('id', 'ip-' + container.Id));
-                tr.append($("<td>").attr('id', 'port-' + container.Id));
-                tr.append($("<td>").html('<button class="transparent-btn" onclick="getInfo(\'' + container.Id + '\')"><i class="bi bi-info-circle text-primary"></i></button>' + '<button class="transparent-btn" onclick="getStats(\'' + container.Id + '\')"><i class="bi bi-bar-chart-fill text-primary"></i></button>'));
+                tr = $("<tr>").attr('id', 'row-' + container.ID);
+                tr.append($("<td>").html('<input type="checkbox" class="tr-checkbox" value="' + container.ID + '" name="container"> <span class="spinner-grow spinner-grow-sm row-spinner d-none" role="status" aria-hidden="true"></span>'));
+                tr.append($("<td>").attr('id', 'name-' + container.ID));
+                tr.append($("<td>").attr('id', 'id-' + container.ID));
+                tr.append($("<td>").attr('id', 'state-' + container.ID));
+                tr.append($("<td>").attr('id', 'status-' + container.ID));
+                tr.append($("<td>").attr('id', 'image-' + container.ID));
+                tr.append($("<td>").attr('id', 'port-' + container.ID));
+                tr.append($("<td>").html('<button class="transparent-btn" onclick="getInfo(\'' + container.ID + '\')"><i class="bi bi-info-circle text-primary"></i></button>' + '<button class="transparent-btn" onclick="getStats(\'' + container.ID + '\')"><i class="bi bi-bar-chart-fill text-primary"></i></button>'));
                 tbody.append(tr);
             }
 
             // Update the cells with the new data only if it has changed
-            if (previousState[container.Id]?.Name !== container.Name) {
-                $('#name-' + container.Id).text(container.Name.substring(1));
+            if (previousState[container.ID]?.Names[0] !== container.Names[0]) {
+                $('#name-' + container.ID).text(container.Names[0].substring(1));
             }
-            if (previousState[container.Id]?.Id !== container.Id) {
-                $('#id-' + container.Id).text(container.Id.substring(0, 12));
+            if (previousState[container.ID]?.ID !== container.ID) {
+                $('#id-' + container.ID).text(container.ID.substring(0, 12));
             }
-            if (previousState[container.Id]?.State?.Status !== container.State.Status) {
-                $('#status-' + container.Id).html('<span class="badge bg-' + getStatusClass(container.State.Status) + '">' + container.State.Status + '</span>');
+            if (previousState[container.ID]?.State !== container.State) {
+                $('#state-' + container.ID).html('<span class="badge bg-' + getStatusClass(container.State) + '">' + container.State + '</span>');
             }
-            if (previousState[container.Id]?.Config?.Image !== container.Config.Image) {
-                $('#image-' + container.Id).text(container.Config.Image);
+            if (previousState[container.ID]?.Status !== container.Status) {
+                $('#status-' + container.ID).html('<span class="badge bg-' + getStatusClass(container.Status) + '">' + container.Status + '</span>');
             }
-            if (previousState[container.Id]?.NetworkSettings?.IPAddress !== container.NetworkSettings.IPAddress) {
-                $('#ip-' + container.Id).text(container.NetworkSettings.IPAddress);
+            if (previousState[container.ID]?.Image !== container.Image) {
+                $('#image-' + container.ID).text(container.Image);
             }
-            if (previousState[container.Id]?.HostConfig?.PortBindings !== container.HostConfig.PortBindings) {
-                $('#port-' + container.Id).html(getPortBindings(container.HostConfig.PortBindings));
+            if (previousState[container.ID]?.Ports !== container.Ports) {
+                $('#port-' + container.ID).html(getPortBindings(container.Ports));
             }
 
             // Store the current state of the container for the next update
-            previousState[container.Id] = container;
+            previousState[container.ID] = container;
         });
 
         $("#loading").hide();
@@ -102,6 +104,7 @@ $(document).ready(function () {
 
     messagesSource.onmessage = function (event) {
         var data = JSON.parse(event.data);
+        console.log(data);
         $('#message-container').append(
             '<div class="alert alert-' + data.category + ' alert-dismissible fade show" role="alert">' +
             data.text +
@@ -123,7 +126,7 @@ $(document).ready(function () {
         $("#btncheck1").prop('checked', false);
         $("#confirm-prune").toggleClass('disabled');
         $.ajax({
-            url: '/actions/prune',
+            url: 'https://localhost:5001/actions/prune',
             method: 'POST',
             success: function (result) {
             },
@@ -158,10 +161,10 @@ function getStatusClass(status) {
 
 function getPortBindings(portBindings) {
     var result = "";
-    $.each(portBindings, function (key, value) {
-        $.each(value, function (i, item) {
-            result += '<a href="http://localhost:' + item.HostPort + '" target="_blank">' + item.HostPort + ':' + key.split('/')[0] + ' <i class="bi bi-box-arrow-up-right"></i></a> ';
-        });
+    $.each(portBindings, function (i, port) {
+        if (port.PublicPort) {
+            result += '<a href="http://localhost:' + port.PublicPort + '" target="_blank">' + port.PrivatePort + ':' + port.PublicPort + ' <i class="bi bi-box-arrow-up-right"></i></a> ';
+        }
     });
     return result;
 }
@@ -184,7 +187,7 @@ function performAction(url, actionBtnId) {
     });
 
     $.ajax({
-        url: url,
+        url: 'https://localhost:5001'+url,
         type: 'POST',
         data: JSON.stringify({ 'ids': checkedIds }),
         contentType: 'application/json',

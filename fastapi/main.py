@@ -46,7 +46,7 @@ async def subscribeContainerList(req: Request):
             await pubsub.close()
             break
         if message["type"] == "message" and message["data"] != 1:
-            yield f"data: {message['data'].decode('utf-8')}\n\n"
+            yield f"{message['data'].decode('utf-8')}\n\n"
 
 
 @app.get("/api/streams/containerlist")

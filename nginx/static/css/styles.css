@@ -1,0 +1,21 @@
+body {
+  background-color: rgb(245, 245, 245);
+}
+
+#app {
+  padding: 28px !important;
+}
+
+#app #page-links > a {
+  color: #365aa2;
+  text-decoration: none;
+}
+
+th {
+  background-color: transparent !important;
+  color: rgb(50, 50, 50) !important;
+}
+td {
+  background-color: transparent !important;
+  color: rgb(70, 70, 70) !important;
+}
