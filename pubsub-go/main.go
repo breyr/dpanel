@@ -23,6 +23,8 @@ type ContainerInfo struct {
 	Ports  []types.Port
 }
 
+// Package level variables accessible by all functions
+// Good to keep up here if the variable doesnt need to be modified
 var ctx = context.Background()
 var redisClient = redis.NewClient(&redis.Options{
 	Addr:     "host.docker.internal:6379",
@@ -76,9 +78,12 @@ func publishContainerStats(dockerClient *client.Client) {
 		}
 
 		var wg sync.WaitGroup
+		// the number of go routines that will be spawned
 		wg.Add(len(containers))
 		for _, container := range containers {
+			// concurrently fetch the stats for each container
 			go func(container types.Container) {
+				// decrements the wait group by one, AFTER this function is complete
 				defer wg.Done()
 
 				stats, err := dockerClient.ContainerStats(ctx, container.ID, false)
@@ -107,6 +112,7 @@ func publishContainerStats(dockerClient *client.Client) {
 				}
 			}(container)
 		}
+		// publishContainerStats goroutine waits for all stat collection goroutines to complete
 		wg.Wait()
 
 		time.Sleep(time.Second)
@@ -122,7 +128,7 @@ func main() {
 	go publishContainerStats(dockerClient)
 	go publishHomepageData(dockerClient)
 
-	// Keep the main goroutine running
+	// blocking operation, puts main() goroutine in an idle state waiting for all other goroutines to finish
 	select {}
 
 }
