@@ -31,6 +31,14 @@ services:
     restart: always
     depends_on:
       - redis
+  go-api:
+    build:
+      context: ./api
+    ports:
+      - 5002:5002
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./api:/app
   redis:
     image: redis:latest
     ports:
