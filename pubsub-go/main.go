@@ -63,8 +63,7 @@ func publishHomepageData(dockerClient *client.Client) {
 			continue
 		}
 
-		// half a second
-		time.Sleep(time.Second / 2)
+		time.Sleep(time.Second)
 	}
 }
 
@@ -110,7 +109,7 @@ func publishContainerStats(dockerClient *client.Client) {
 		}
 		wg.Wait()
 
-		time.Sleep(time.Second / 2)
+		time.Sleep(time.Second)
 	}
 }
 
