@@ -23,9 +23,9 @@ services:
       - ./web:/app # bind mount for development
     depends_on:
       - redis
-  pubsub:
+  pubsub-go:
     build:
-      context: ./pubsub
+      context: ./pubsub-go
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     restart: always
