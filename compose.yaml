@@ -31,6 +31,17 @@ services:
     restart: always
     depends_on:
       - redis
+  dpanel-fastapi:
+    build:
+      context: ./fastapi
+    ports:
+      - 5002:5002
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./fastapi:/code
+    restart: always
+    depends_on:
+      - redis
   redis:
     image: redis:latest
     ports:
