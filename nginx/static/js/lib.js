@@ -1,41 +1,15 @@
-// toggle buttons based on checkboxes for rows
-$(document).on('change', '.tr-checkbox', function () {
-    var checkedCount = $('.tr-checkbox:checked').length;
-    // Then, enable the correct buttons based on the status
-    if (checkedCount > 0) {
-        $('#btn-stop, #btn-kill, #btn-restart, #btn-pause, #btn-delete, #btn-resume, #btn-start').removeClass('disabled');
-    } else {
-        // If no checkboxes are checked, disable all buttons
-        $('#btn-stop, #btn-kill, #btn-restart, #btn-pause, #btn-delete, #btn-resume, #btn-start').addClass('disabled');
-    }
-});
-
-function getInfo(containerId) {
-    fetch('http://localhost:5002/api/containers/info/' + containerId)
-        .then(response => response.json())
-        .then(data => {
-            // Create a new Blob from the JSON string
-            var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-
-            // Create an object URL from the Blob
-            var url = URL.createObjectURL(blob);
-
-            // Open the URL in a new tab
-            window.open(url, '_blank');
-        });
-}
-
-function getStats(containerId) {
-    window.open('/actions/stats/' + containerId, '_blank');
-}
+// File: Lib.js
 
 $(document).ready(function () {
 
-    $("#spinner").hide();
-    $("#loading").show();
+    // Adds actions to all teh container buttons
+    ['delete', 'start', 'stop', 'kill', 'restart', 'pause', 'resume'].forEach(action => {
+        $(`#btn-${action}`).click(function () {
+            performAction(action, `btn-${action}`);
+        });
+    });
 
-    // AJAX in the blocks
-    // $("#primary-block").load("./static/pages/containers.html");
+    $("#loading").show();
 
     // Get event sources
     var homepageSource = new EventSource('http://localhost:5002/api/streams/containerlist');
@@ -94,25 +68,33 @@ $(document).ready(function () {
                 }
             }
 
-            // Update the cells with the new data only if it has changed
-            if (previousState[container.ID]?.Names[0] !== container.Names[0]) {
-                $('#name-' + container.ID).text(container.Names[0].substring(1));
-            }
-            if (previousState[container.ID]?.ID !== container.ID) {
-                $('#id-' + container.ID).text(container.ID.substring(0, 12));
-            }
-            if (previousState[container.ID]?.State !== container.State) {
-                $('#state-' + container.ID).html('<span class="badge bg-' + getStatusClass(container.State) + '">' + container.State + '</span>');
-            }
-            if (previousState[container.ID]?.Status !== container.Status) {
-                $('#status-' + container.ID).html('<span class="badge bg-' + getStatusClass(container.Status) + '">' + container.Status + '</span>');
-            }
-            if (previousState[container.ID]?.Image !== container.Image) {
-                $('#image-' + container.ID).text(container.Image);
-            }
-            if (previousState[container.ID]?.Ports !== container.Ports) {
-                $('#port-' + container.ID).html(getPortBindings(container.Ports));
-            }
+            // Define the attributes to be updated
+            const attributes = ['Names', 'ID', 'State', 'Status', 'Image', 'Ports'];
+            attributes.forEach(attr => {
+                // If the attribute has changed
+                if (previousState[container.ID]?.[attr] !== container[attr]) {
+                    switch (attr) {
+                        case 'Names':
+                            $(`#name-${container.ID}`).text(container.Names[0].substring(1));
+                            break;
+                        case 'ID':
+                            $(`#id-${container.ID}`).text(container.ID.substring(0, 12));
+                            break;
+                        case 'State':
+                            $(`#state-${container.ID}`).html(`<span class="badge bg-${getStatusClass(container.State)}">${container.State}</span>`);
+                            break;
+                        case 'Status':
+                            $(`#status-${container.ID}`).html(`<span class="badge bg-${getStatusClass(container.Status)}">${container.Status}</span>`);
+                            break;
+                        case 'Image':
+                            $(`#image-${container.ID}`).text(container.Image);
+                            break;
+                        case 'Ports':
+                            $(`#port-${container.ID}`).html(getPortBindings(container.Ports));
+                            break;
+                    }
+                }
+            });
 
             // Store the current state of the container for the next update
             previousState[container.ID] = container;
@@ -172,94 +154,10 @@ $(document).ready(function () {
     });
 });
 
-function getStatusClass(status) {
-    switch (status) {
-        case "running": return "success";
-        case "paused": return "warning";
-        case "exited": return "danger";
-        default: return "secondary";
-    }
-}
+// Enables buttons after checkbox input
+$(document).on('change', '.tr-checkbox', function () {
+    const checkedCount = $('.tr-checkbox:checked').length;
+    const buttonSelector = '#btn-stop, #btn-kill, #btn-restart, #btn-pause, #btn-delete, #btn-resume, #btn-start';
 
-function getPortBindings(portBindings) {
-    var result = "";
-    $.each(portBindings, function (i, port) {
-        if (port.PublicPort) {
-            result += '<a href="http://localhost:' + port.PublicPort + '" target="_blank">' + port.PrivatePort + ':' + port.PublicPort + ' <i class="bi bi-box-arrow-up-right"></i></a> ';
-        }
-    });
-    return result;
-}
-
-function performAction(action, actionBtnId) {
-    // get all container ids that are checked
-    var checkedIds = $('.tr-checkbox:checked').map(function () {
-        return this.value;
-    }).get();
-
-    // diable action button based on actionText
-    $('#' + actionBtnId).prop('disabled', true);
-
-    // for each checked row, show the spinner and display the action text
-    $('.tr-checkbox:checked').each(function () {
-        // disable checkbox
-        $(this).hide();
-        var row = $(this).closest('tr');
-        row.find('.row-spinner').toggleClass('d-none');
-    });
-
-    $.ajax({
-        url: 'http://localhost:5002/api/containers/' + action,
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({ 'ids': checkedIds }),
-        success: function (result) {
-            // hide spinners
-            $('.tr-checkbox:checked').each(function () {
-                $(this).show();
-                var row = $(this).closest('tr');
-                row.find('.row-spinner').toggleClass('d-none');
-            });
-            // re-enable all action buttons
-            $('#' + actionBtnId).prop('disabled', false);
-        },
-        error: function (result) {
-            // hide spinners
-            $('.tr-checkbox:checked').each(function () {
-                $(this).show();
-                var row = $(this).closest('tr');
-                row.find('.row-spinner').toggleClass('d-none');
-            });
-            // re-enable all action buttons
-            $('#' + actionBtnId).prop('disabled', false);
-        }
-    });
-}
-
-$('#btn-delete').click(function () {
-    performAction('delete', 'btn-delete');
-});
-
-$('#btn-start').click(function () {
-    performAction('start', 'btn-start');
-});
-
-$('#btn-stop').click(function () {
-    performAction('stop', 'btn-stop');
-});
-
-$('#btn-kill').click(function () {
-    performAction('kill', 'btn-kill');
-});
-
-$('#btn-restart').click(function () {
-    performAction('restart', 'btn-restart');
-});
-
-$('#btn-pause').click(function () {
-    performAction('pause', 'btn-pause');
-});
-
-$('#btn-resume').click(function () {
-    performAction('resume', 'btn-resume');
+    $(buttonSelector).toggleClass('disabled', checkedCount === 0);
 });
