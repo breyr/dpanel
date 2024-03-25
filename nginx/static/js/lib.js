@@ -70,7 +70,7 @@ $(document).ready(function () {
         $.each(data, function (i, container) {
             var tr = tbody.find('#row-' + container.ID);
             if (!tr.length) {
-                // If the row does not exist, create it
+                // If the row does not exist, then it was recently created so prepend to the table
                 tr = $("<tr>").attr('id', 'row-' + container.ID);
                 tr.append($("<td>").html('<input type="checkbox" class="tr-checkbox" value="' + container.ID + '" name="container"> <span class="spinner-grow spinner-grow-sm row-spinner d-none" role="status" aria-hidden="true"></span>'));
                 tr.append($("<td>").attr('id', 'name-' + container.ID));
@@ -80,8 +80,9 @@ $(document).ready(function () {
                 tr.append($("<td>").attr('id', 'image-' + container.ID));
                 tr.append($("<td>").attr('id', 'port-' + container.ID));
                 tr.append($("<td>").html('<button class="transparent-btn" onclick="getInfo(\'' + container.ID + '\')"><i class="bi bi-info-circle text-primary"></i></button>'));
-                // add to top of table to reflect container stream data
-                tbody.prepend(tr);
+                // first load, all rows are new so append in order the data was sent
+                // TODO: previous loads, this appends newly created containers to the bottom of the table, which we don't want, but we need to be able to track state
+                tbody.append(tr);
             }
 
             // Update the cells with the new data only if it has changed
