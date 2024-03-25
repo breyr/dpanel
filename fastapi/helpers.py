@@ -35,11 +35,11 @@ def pause_container(container: Container):
 
 
 def resume_container(container: Container):
-    if container.status == "paused":
-        container.unpase()
-        return {"message": "success", "containerId": container.short_id}
-    # already exited
-    return {"message": "error", "containerId": container.short_id}
+    try:
+        container.unpause()
+    except APIError as e:
+        return {"message": "error", "containerId": container.short_id}
+    return {"message": "success", "containerId": container.short_id}
 
 
 def start_container(container: Container):
@@ -70,6 +70,15 @@ def restart_container(container: Container):
 def kill_container(container: Container):
     try:
         container.kill()
+    except APIError as e:
+        # already killed
+        return {"message": "error", "containerId": container.short_id}
+    return {"message": "success", "containerId": container.short_id}
+
+
+def delete_container(container: Container):
+    try:
+        container.remove(v=False, link=False, force=True)
     except APIError as e:
         # already killed
         return {"message": "error", "containerId": container.short_id}

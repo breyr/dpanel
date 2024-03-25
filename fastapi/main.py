@@ -18,6 +18,7 @@ from helpers import (
     kill_container,
     restart_container,
     resume_container,
+    delete_container,
 )
 
 # Define global variables
@@ -104,6 +105,38 @@ async def container_list(req: Request):
     return EventSourceResponse(subscribe_to_channel(req, "server_messages", redis))
 
 
+@app.get("/api/containers/info/{container_id}")
+def info(container_id: str):
+    # get container information
+    return DOCKER_CLIENT.containers.get(container_id=container_id).attrs
+
+
+@app.post("/api/system/prune")
+async def prune_system(req: Request):
+    try:
+        pruned_containers = DOCKER_CLIENT.containers.prune()
+        # client.images.prune()
+        # client.networks.prune()
+        # client.volumes.prune()
+        containers_deleted = pruned_containers.get("ContainersDeleted")
+        if containers_deleted is not None:
+            num_deleted = len(containers_deleted)
+        else:
+            num_deleted = 0
+        space_reclaimed = pruned_containers.get("SpaceReclaimed", 0)
+        await publish_message_data(
+            f"System pruned successfully: {num_deleted} containers deleted, {space_reclaimed} space reclaimed",
+            "success",
+            redis=redis,
+        )
+        return JSONResponse(
+            content={"message": "System prune successfull"}, status_code=200
+        )
+    except APIError as e:
+        await publish_message_data("API error, please try again", "danger", redis=redis)
+        return JSONResponse(content={"message": "API error"}, status_code=400)
+
+
 @app.post("/api/containers/start")
 async def start_containers(req: Request):
     return await perform_action(
@@ -143,4 +176,11 @@ async def pause_containers(req: Request):
 async def resume_containers(req: Request):
     return await perform_action(
         req, resume_container, "Containers resumed", "Containers already resumed"
+    )
+
+
+@app.post("/api/containers/delete")
+async def delete_containers(req: Request):
+    return await perform_action(
+        req, delete_container, "Containers deleted", "Containers already deleted"
     )

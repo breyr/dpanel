@@ -11,7 +11,7 @@ $(document).on('change', '.tr-checkbox', function () {
 });
 
 function getInfo(containerId) {
-    fetch('/actions/info/' + containerId)
+    fetch('http://localhost:5002/api/containers/info/' + containerId)
         .then(response => response.json())
         .then(data => {
             // Create a new Blob from the JSON string
@@ -57,6 +57,16 @@ $(document).ready(function () {
     var previousState = {};
     homepageSource.onmessage = function (event) {
         var data = JSON.parse(event.data);
+        // keep track of containerIds in the incoming data stream
+        var containerIds = new Set(data.map(container => container.ID));
+        // remove any rows with IDs not in the set
+        tbody.find('tr').each(function () {
+            var tr = $(this);
+            var id = tr.attr('id').substring(4);  // remove 'row-' prefix
+            if (!containerIds.has(id)) {
+                tr.remove();
+            }
+        });
         $.each(data, function (i, container) {
             var tr = tbody.find('#row-' + container.ID);
             if (!tr.length) {
@@ -69,8 +79,9 @@ $(document).ready(function () {
                 tr.append($("<td>").attr('id', 'status-' + container.ID));
                 tr.append($("<td>").attr('id', 'image-' + container.ID));
                 tr.append($("<td>").attr('id', 'port-' + container.ID));
-                tr.append($("<td>").html('<button class="transparent-btn" onclick="getInfo(\'' + container.ID + '\')"><i class="bi bi-info-circle text-primary"></i></button>' + '<button class="transparent-btn" onclick="getStats(\'' + container.ID + '\')"><i class="bi bi-bar-chart-fill text-primary"></i></button>'));
-                tbody.append(tr);
+                tr.append($("<td>").html('<button class="transparent-btn" onclick="getInfo(\'' + container.ID + '\')"><i class="bi bi-info-circle text-primary"></i></button>'));
+                // add to top of table to reflect container stream data
+                tbody.prepend(tr);
             }
 
             // Update the cells with the new data only if it has changed
@@ -123,8 +134,8 @@ $(document).ready(function () {
         $("#btncheck1").prop('checked', false);
         $("#confirm-prune").toggleClass('disabled');
         $.ajax({
-            url: 'https://localhost:5001/api/system/prune',
-            method: 'POST',
+            url: 'http://localhost:5002/api/system/prune',
+            type: 'POST',
             success: function (result) {
             },
             error: function (result) {
