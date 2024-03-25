@@ -40,7 +40,7 @@ $(document).ready(function () {
 
     // Get event sources
     var homepageSource = new EventSource('http://localhost:5002/api/streams/containerlist');
-    var messagesSource = new EventSource('http://localhost:5001/streaming/messages');
+    var messagesSource = new EventSource('http://localhost:5002/api/streams/servermessages');
 
     // Function to close EventSource connections
     // close() calls the call_on_close in server and unsubscribes from topic
@@ -58,7 +58,6 @@ $(document).ready(function () {
     var previousState = {};
     homepageSource.onmessage = function (event) {
         var data = JSON.parse(event.data);
-        console.log(data);
         $.each(data, function (i, container) {
             var tr = tbody.find('#row-' + container.ID);
             if (!tr.length) {
@@ -126,7 +125,7 @@ $(document).ready(function () {
         $("#btncheck1").prop('checked', false);
         $("#confirm-prune").toggleClass('disabled');
         $.ajax({
-            url: 'https://localhost:5001/actions/prune',
+            url: 'https://localhost:5001/api/system/prune',
             method: 'POST',
             success: function (result) {
             },
@@ -169,7 +168,7 @@ function getPortBindings(portBindings) {
     return result;
 }
 
-function performAction(url, actionBtnId) {
+function performAction(action, actionBtnId) {
     // get all container ids that are checked
     var checkedIds = $('.tr-checkbox:checked').map(function () {
         return this.value;
@@ -187,11 +186,21 @@ function performAction(url, actionBtnId) {
     });
 
     $.ajax({
-        url: 'https://localhost:5001'+url,
+        url: 'http://localhost:5002/api/containers/' + action,
         type: 'POST',
-        data: JSON.stringify({ 'ids': checkedIds }),
         contentType: 'application/json',
+        data: JSON.stringify({ 'ids': checkedIds }),
         success: function (result) {
+            // hide spinners
+            $('.tr-checkbox:checked').each(function () {
+                $(this).show();
+                var row = $(this).closest('tr');
+                row.find('.row-spinner').toggleClass('d-none');
+            });
+            // re-enable all action buttons
+            $('#' + actionBtnId).prop('disabled', false);
+        },
+        error: function (result) {
             // hide spinners
             $('.tr-checkbox:checked').each(function () {
                 $(this).show();
@@ -205,29 +214,29 @@ function performAction(url, actionBtnId) {
 }
 
 $('#btn-delete').click(function () {
-    performAction('/actions/delete', 'btn-delete');
+    performAction('delete', 'btn-delete');
 });
 
 $('#btn-start').click(function () {
-    performAction('/actions/start', 'btn-start');
+    performAction('start', 'btn-start');
 });
 
 $('#btn-stop').click(function () {
-    performAction('/actions/stop', 'btn-stop');
+    performAction('stop', 'btn-stop');
 });
 
 $('#btn-kill').click(function () {
-    performAction('/actions/kill', 'btn-kill');
+    performAction('kill', 'btn-kill');
 });
 
 $('#btn-restart').click(function () {
-    performAction('/actions/restart', 'btn-restart');
+    performAction('restart', 'btn-restart');
 });
 
 $('#btn-pause').click(function () {
-    performAction('/actions/pause', 'btn-pause');
+    performAction('pause', 'btn-pause');
 });
 
 $('#btn-resume').click(function () {
-    performAction('/actions/resume', 'btn-resume');
+    performAction('resume', 'btn-resume');
 });

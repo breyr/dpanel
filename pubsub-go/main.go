@@ -59,7 +59,7 @@ func publishHomepageData(dockerClient *client.Client) {
 			continue
 		}
 
-		err = redisClient.Publish("containers_homepage", containersJSON).Err()
+		err = redisClient.Publish("containers_list", containersJSON).Err()
 		if err != nil {
 			log.Printf("Failed to publish containers to Redis: %v\n", err)
 			continue

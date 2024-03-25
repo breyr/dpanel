@@ -1,21 +1,30 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException
 from sse_starlette import EventSourceResponse
 from fastapi.requests import Request
+from fastapi.responses import JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 import aioredis
+from aioredis import Redis
+import json
+from models import ContainerData
+import docker
+from docker.errors import APIError
+
+# Define global variables
+redis: Redis = None
+DOCKER_CLIENT = docker.from_env()
 
 app = FastAPI()
 
+origins = ["http://localhost:3000", "http://localhost:5002"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Allows all origins
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
 )
-
-# Define global variables
-redis = None
 
 
 # Function to setup aioredis
@@ -38,9 +47,10 @@ app.add_event_handler("startup", setup_redis)
 app.add_event_handler("shutdown", close_redis)
 
 
-async def subscribeContainerList(req: Request):
+async def subscribeToChannel(req: Request, chan: str):
     pubsub = redis.pubsub()
-    await pubsub.subscribe("containers_homepage")
+    # will fail if you pass a channel that doesn't exist
+    await pubsub.subscribe(chan)
     async for message in pubsub.listen():
         if await req.is_disconnected():
             await pubsub.close()
@@ -49,6 +59,30 @@ async def subscribeContainerList(req: Request):
             yield f"{message['data'].decode('utf-8')}\n\n"
 
 
+def publish_message_data(message: str, category: str):
+    redis.publish(
+        "server_messages", json.dumps({"text": message, "category": category})
+    )
+
+
+# ======== ENDPOINTS =========
+
+
 @app.get("/api/streams/containerlist")
 async def container_list(req: Request):
-    return EventSourceResponse(subscribeContainerList(req))
+    return EventSourceResponse(subscribeToChannel(req, "containers_list"))
+
+
+@app.get("/api/streams/servermessages")
+async def container_list(req: Request):
+    return EventSourceResponse(subscribeToChannel(req, "server_messages"))
+
+
+@app.post("/api/containers/start")
+def start_containers(req: Request):
+    pass
+
+
+@app.post("/api/containers/pause")
+def pause_containers(req: Request):
+    pass
