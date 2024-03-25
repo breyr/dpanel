@@ -55,7 +55,9 @@ $(document).ready(function () {
 
     var tbody = $("table tbody");
     var previousState = {};
+    var firstLoad = true;
     homepageSource.onmessage = function (event) {
+        console.log("first load: " + firstLoad)
         var data = JSON.parse(event.data);
         // keep track of containerIds in the incoming data stream
         var containerIds = new Set(data.map(container => container.ID));
@@ -69,8 +71,9 @@ $(document).ready(function () {
         });
         $.each(data, function (i, container) {
             var tr = tbody.find('#row-' + container.ID);
+            console.log(data);
             if (!tr.length) {
-                // If the row does not exist, then it was recently created so prepend to the table
+                // If the row does not exist, create it
                 tr = $("<tr>").attr('id', 'row-' + container.ID);
                 tr.append($("<td>").html('<input type="checkbox" class="tr-checkbox" value="' + container.ID + '" name="container"> <span class="spinner-grow spinner-grow-sm row-spinner d-none" role="status" aria-hidden="true"></span>'));
                 tr.append($("<td>").attr('id', 'name-' + container.ID));
@@ -82,7 +85,13 @@ $(document).ready(function () {
                 tr.append($("<td>").html('<button class="transparent-btn" onclick="getInfo(\'' + container.ID + '\')"><i class="bi bi-info-circle text-primary"></i></button>'));
                 // first load, all rows are new so append in order the data was sent
                 // TODO: previous loads, this appends newly created containers to the bottom of the table, which we don't want, but we need to be able to track state
-                tbody.append(tr);
+                // if its the first load, append everything
+                // if its a newly created container, will have to prepend
+                if (firstLoad) {
+                    tbody.append(tr);
+                } else {
+                    tbody.prepend(tr);
+                }
             }
 
             // Update the cells with the new data only if it has changed
@@ -108,9 +117,13 @@ $(document).ready(function () {
             // Store the current state of the container for the next update
             previousState[container.ID] = container;
         });
+        if (firstLoad) {
+            firstLoad = false;
+        }
 
         $("#loading").hide();
     };
+
 
     messagesSource.onmessage = function (event) {
         var data = JSON.parse(event.data);
