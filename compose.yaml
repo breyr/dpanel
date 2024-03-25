@@ -10,19 +10,6 @@ services:
       - ./nginx:/app # bind mount for development
     ports:
       - 3000:3000
-  web:
-    build:
-      context: ./web
-    image: dpanel:latest
-    ports:
-      - 5001:5001
-    restart: on-failure
-    network_mode: bridge
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./web:/app # bind mount for development
-    depends_on:
-      - redis
   pubsub-go:
     build:
       context: ./pubsub-go
