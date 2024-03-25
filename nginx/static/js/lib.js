@@ -1,7 +1,6 @@
 // toggle buttons based on checkboxes for rows
 $(document).on('change', '.tr-checkbox', function () {
     var checkedCount = $('.tr-checkbox:checked').length;
-    console.log(checkedCount);
     // Then, enable the correct buttons based on the status
     if (checkedCount > 0) {
         $('#btn-stop, #btn-kill, #btn-restart, #btn-pause, #btn-delete, #btn-resume, #btn-start').removeClass('disabled');
@@ -103,7 +102,6 @@ $(document).ready(function () {
 
     messagesSource.onmessage = function (event) {
         var data = JSON.parse(event.data);
-        console.log(data);
         $('#message-container').append(
             '<div class="alert alert-' + data.category + ' alert-dismissible fade show" role="alert">' +
             data.text +

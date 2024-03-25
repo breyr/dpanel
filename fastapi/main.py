@@ -1,22 +1,31 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request
 from sse_starlette import EventSourceResponse
 from fastapi.requests import Request
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import aioredis
 from aioredis import Redis
 import json
-from models import ContainerData
-import docker
 from docker.errors import APIError
+from typing import Callable
+from helpers import (
+    DOCKER_CLIENT,
+    pause_container,
+    subscribe_to_channel,
+    publish_message_data,
+    start_container,
+    stop_container,
+    kill_container,
+    restart_container,
+    resume_container,
+)
 
 # Define global variables
 redis: Redis = None
-DOCKER_CLIENT = docker.from_env()
 
 app = FastAPI()
 
-origins = ["http://localhost:3000", "http://localhost:5002"]
+origins = ["http://localhost:3000"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -47,22 +56,39 @@ app.add_event_handler("startup", setup_redis)
 app.add_event_handler("shutdown", close_redis)
 
 
-async def subscribeToChannel(req: Request, chan: str):
-    pubsub = redis.pubsub()
-    # will fail if you pass a channel that doesn't exist
-    await pubsub.subscribe(chan)
-    async for message in pubsub.listen():
-        if await req.is_disconnected():
-            await pubsub.close()
-            break
-        if message["type"] == "message" and message["data"] != 1:
-            yield f"{message['data'].decode('utf-8')}\n\n"
+# ======== HELPERS =========
 
 
-def publish_message_data(message: str, category: str):
-    redis.publish(
-        "server_messages", json.dumps({"text": message, "category": category})
-    )
+async def perform_action(
+    req: Request, action: Callable, success_msg: str, error_msg: str
+):
+    try:
+        data = await req.json()
+        ids = data["ids"]
+        error_ids = []
+        for id in ids:
+            container = DOCKER_CLIENT.containers.get(id)
+            res = action(container)
+            if res["message"] == "error":
+                error_ids.append(res["containerId"])
+        # no containers had the action performed
+        if len(ids) - len(error_ids) == 0:
+            await publish_message_data(
+                f"{error_msg}: {error_ids}", "danger", redis=redis
+            )
+        else:
+            await publish_message_data(
+                f"{success_msg}: {len(ids) - len(error_ids)}", "success", redis=redis
+            )
+            # publish any error ids
+            if error_ids:
+                await publish_message_data(
+                    f"{error_msg}: {error_ids}", "danger", redis=redis
+                )
+        return JSONResponse(content={"message": f"{success_msg}"}, status_code=200)
+    except Exception as e:
+        await publish_message_data("API error, please try again", "danger", redis=redis)
+        return JSONResponse(content={"message": "API error"}, status_code=400)
 
 
 # ======== ENDPOINTS =========
@@ -70,19 +96,51 @@ def publish_message_data(message: str, category: str):
 
 @app.get("/api/streams/containerlist")
 async def container_list(req: Request):
-    return EventSourceResponse(subscribeToChannel(req, "containers_list"))
+    return EventSourceResponse(subscribe_to_channel(req, "containers_list", redis))
 
 
 @app.get("/api/streams/servermessages")
 async def container_list(req: Request):
-    return EventSourceResponse(subscribeToChannel(req, "server_messages"))
+    return EventSourceResponse(subscribe_to_channel(req, "server_messages", redis))
 
 
 @app.post("/api/containers/start")
-def start_containers(req: Request):
-    pass
+async def start_containers(req: Request):
+    return await perform_action(
+        req, start_container, "Containers started", "Containers already started"
+    )
+
+
+@app.post("/api/containers/stop")
+async def pause_containers(req: Request):
+    return await perform_action(
+        req, stop_container, "Containers stopped", "Containers already stopped"
+    )
+
+
+@app.post("/api/containers/kill")
+async def kill_containers(req: Request):
+    return await perform_action(
+        req, kill_container, "Containers killed", "Containers already killed"
+    )
+
+
+@app.post("/api/containers/restart")
+async def restart_containers(req: Request):
+    return await perform_action(
+        req, restart_container, "Containers restarted", "Containers already restarted"
+    )
 
 
 @app.post("/api/containers/pause")
-def pause_containers(req: Request):
-    pass
+async def pause_containers(req: Request):
+    return await perform_action(
+        req, pause_container, "Containers paused", "Containers already paused"
+    )
+
+
+@app.post("/api/containers/resume")
+async def resume_containers(req: Request):
+    return await perform_action(
+        req, resume_container, "Containers resumed", "Containers already resumed"
+    )

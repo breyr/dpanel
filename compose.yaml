@@ -5,7 +5,7 @@ services:
     build:
       context: ./nginx
       dockerfile: Dockerfile
-    restart: always
+    restart: on-failure
     volumes:
       - ./nginx:/app # bind mount for development
     ports:
@@ -16,7 +16,7 @@ services:
     image: dpanel:latest
     ports:
       - 5001:5001
-    restart: always
+    restart: on-failure
     network_mode: bridge
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -28,7 +28,7 @@ services:
       context: ./pubsub-go
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    restart: always
+    restart: on-failure
     depends_on:
       - redis
   dpanel-fastapi:
@@ -39,7 +39,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./fastapi:/code
-    restart: always
+    restart: on-failure
     depends_on:
       - redis
   redis:
