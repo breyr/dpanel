@@ -2,8 +2,9 @@
 
 DPanel is a web interface for managing docker containers, images, and volumes. It is built using the Flask web framework and the Docker SDK for Python. This is a work in progress and is not yet ready for use.
 
-https://docker-py.readthedocs.io/en/stable/containers.html#container-objects
-https://docs.docker.com/engine/api/sdk/examples/#list-and-manage-containers
+<div style="width: 75%; margin: 0 auto;">
+    <img src="./DPanel.drawio.svg" alt="Alt text">
+</div>
 
 TODOS:
 - [X] Add functionality of buttons
@@ -15,4 +16,4 @@ TODOS:
 - [ ] Add information to images tab
 - [ ] Add information to volumes tab
 - [ ] networking tab?
-- [ ] combine all tabs into one page
+- [X] combine all tabs into one page
