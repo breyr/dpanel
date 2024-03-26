@@ -5,11 +5,11 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import aioredis
 from aioredis import Redis
-import json
-from docker.errors import APIError
+from aiodocker.exceptions import DockerError
 from typing import Callable
+import asyncio
 from helpers import (
-    DOCKER_CLIENT,
+    ASYNC_DOCKER_CLIENT,
     pause_container,
     subscribe_to_channel,
     publish_message_data,
@@ -19,6 +19,16 @@ from helpers import (
     restart_container,
     resume_container,
     delete_container,
+)
+
+# setup logging for docker container
+import sys
+import logging
+
+logging.basicConfig(
+    stream=sys.stdout,
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
 # Define global variables
@@ -67,25 +77,51 @@ async def perform_action(
         data = await req.json()
         ids = data["ids"]
         error_ids = []
-        for id in ids:
-            container = DOCKER_CLIENT.containers.get(id)
-            res = action(container)
+        success_ids = []
+
+        async def perform_action_and_handle_error(id: str):
+            # logging.info(f"Performing action for container with id: {id}")
+            container = await ASYNC_DOCKER_CLIENT.containers.get(id)
+            # logging.info(f"{container} container for {id}")
+            res = await action(container)
             if res["message"] == "error":
-                error_ids.append(res["containerId"])
+                # race condition?
+                # substring 0-12 for short id
+                error_ids.append(res["containerId"][:12])
+            elif res["message"] == "success":
+                success_ids.append(res["containerId"][:12])
+            # logging.info(f"Finished action for container with id: {id}")
+
+        # create list of taska and use asyncio.gather to run them concurrently
+        tasks = [perform_action_and_handle_error(id) for id in ids]
+        # the * is list unpacking
+        await asyncio.gather(*tasks)
+
         # no containers had the action performed
         if len(ids) - len(error_ids) == 0:
-            await publish_message_data(
-                f"{error_msg}: {error_ids}", "danger", redis=redis
-            )
+            tasks = [
+                publish_message_data(
+                    f"{error_msg} ({len(error_ids)}): {error_ids}",
+                    "danger",
+                    redis=redis,
+                )
+            ]
         else:
-            await publish_message_data(
-                f"{success_msg}: {len(ids) - len(error_ids)}", "success", redis=redis
-            )
+            tasks = [
+                publish_message_data(
+                    f"{success_msg} ({len(ids) - len(error_ids)}):  {success_ids}",
+                    "success",
+                    redis=redis,
+                )
+            ]
             # publish any error ids
             if error_ids:
-                await publish_message_data(
-                    f"{error_msg}: {error_ids}", "danger", redis=redis
+                tasks.append(
+                    publish_message_data(
+                        f"{error_msg}: {error_ids}", "danger", redis=redis
+                    )
                 )
+        await asyncio.gather(*tasks)
         return JSONResponse(content={"message": f"{success_msg}"}, status_code=200)
     except Exception as e:
         await publish_message_data("API error, please try again", "danger", redis=redis)
@@ -97,32 +133,32 @@ async def perform_action(
 
 @app.get("/api/streams/containerlist")
 async def container_list(req: Request):
+    # passes subscribe_to_channel async generator to consume the messages it yields
     return EventSourceResponse(subscribe_to_channel(req, "containers_list", redis))
 
 
 @app.get("/api/streams/servermessages")
 async def container_list(req: Request):
+    # passes subscribe_to_channel async generator to consume the messages it yields
     return EventSourceResponse(subscribe_to_channel(req, "server_messages", redis))
 
 
 @app.get("/api/containers/info/{container_id}")
 def info(container_id: str):
     # get container information
-    return DOCKER_CLIENT.containers.get(container_id=container_id).attrs
+    # this function does not need to be async because get() is not asynchronous
+    return ASYNC_DOCKER_CLIENT.containers.get(container_id=container_id).attrs
 
 
 @app.post("/api/system/prune")
 async def prune_system(req: Request):
     try:
-        pruned_containers = DOCKER_CLIENT.containers.prune()
+        pruned_containers = ASYNC_DOCKER_CLIENT.containers.prune()
         # client.images.prune()
         # client.networks.prune()
         # client.volumes.prune()
         containers_deleted = pruned_containers.get("ContainersDeleted")
-        if containers_deleted is not None:
-            num_deleted = len(containers_deleted)
-        else:
-            num_deleted = 0
+        num_deleted = len(containers_deleted) if containers_deleted is not None else 0
         space_reclaimed = pruned_containers.get("SpaceReclaimed", 0)
         await publish_message_data(
             f"System pruned successfully: {num_deleted} containers deleted, {space_reclaimed} space reclaimed",
@@ -132,7 +168,7 @@ async def prune_system(req: Request):
         return JSONResponse(
             content={"message": "System prune successfull"}, status_code=200
         )
-    except APIError as e:
+    except DockerError as e:
         await publish_message_data("API error, please try again", "danger", redis=redis)
         return JSONResponse(content={"message": "API error"}, status_code=400)
 
