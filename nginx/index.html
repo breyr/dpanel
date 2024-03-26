@@ -37,14 +37,14 @@
             <div class="container-fluid p-3 my-3 bg-light rounded shadow" id="primary-block"
                 style="margin-top: 20px !important;">
                 <div class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse"
-                    data-bs-target="#containerDetails" aria-expanded="false" aria-controls="containerDetails">
+                    data-bs-target="#containerDetails" aria-expanded="true" aria-controls="containerDetails">
                     <div>
                         <i class="bi bi-box-seam me-2"></i>
                         <span class="page-title">Containers</span>
                     </div>
                     <i class="bi bi-chevron-down"></i>
                 </div>
-                <div class="collapse" id="containerDetails">
+                <div class="collapse show" id="containerDetails">
                     <div class="d-flex justify-content-between mb-3">
                         <!-- Inside the drop down -->
                         <main style="width: 100% !important; padding-top: 20px;">
@@ -141,12 +141,12 @@
                             <section class="flex-grow-1">
                                 <table class="table">
                                     <thead class="table-primary">
-                                        <th><input type="checkbox" id="select-all" class="me-2" />
+                                        <th style="width:100px;"><input type="checkbox" id="select-all" class="me-2" />
                                         </th>
                                         <th scope="col">Name</th>
                                         <th scope="col">Short ID</th>
                                         <th scope="col">Status</th>
-                                        <th scope="col">Uptime</th>
+                                        <th scope="col" class="w-20">Uptime</th>
                                         <th scope="col">Image</th>
                                         <th scope="col">Port Binding</th>
                                         <th scope="col">Actions</th>
@@ -154,7 +154,7 @@
                                     <tbody>
                                     </tbody>
                                 </table>
-                                <div id="loading" style="display: none" class="text-center">
+                                <div id="loading" style="display: none; color: rgba(0, 0, 0, 0.2);" class="text-center">
                                     <div class="spinner-border text-info" role="status">
                                         <span class="sr-only">Loading...</span>
                                     </div>
@@ -224,7 +224,7 @@
             </div>
 
             <!-- Messages -->
-            <section class="position-absolute bottom-0 end-0 w-25 me-3" id="message-container"></section>
+            <section class="toast-container position-fixed bottom-0 end-0 p-3" id="toast-container"></section>
     </main>
 
     <!-- Bootstrap JS -->

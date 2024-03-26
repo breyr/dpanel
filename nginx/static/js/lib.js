@@ -31,7 +31,6 @@ $(document).ready(function () {
     var previousState = {};
     var firstLoad = true;
     homepageSource.onmessage = function (event) {
-        console.log("first load: " + firstLoad)
         var data = JSON.parse(event.data);
         // keep track of containerIds in the incoming data stream
         var containerIds = new Set(data.map(container => container.ID));
@@ -45,11 +44,10 @@ $(document).ready(function () {
         });
         $.each(data, function (i, container) {
             var tr = tbody.find('#row-' + container.ID);
-            console.log(data);
             if (!tr.length) {
                 // If the row does not exist, create it
                 tr = $("<tr>").attr('id', 'row-' + container.ID);
-                tr.append($("<td>").html('<input type="checkbox" class="tr-checkbox" value="' + container.ID + '" name="container"> <span class="spinner-grow spinner-grow-sm row-spinner d-none" role="status" aria-hidden="true"></span>'));
+                tr.append($("<td>").html('<input type="checkbox" class="tr-checkbox" value="' + container.ID + '" name="container"> <span class="spinner-border spinner-border-sm text-warning d-none" role="status" aria-hidden="true"></span>'));
                 tr.append($("<td>").attr('id', 'name-' + container.ID));
                 tr.append($("<td>").attr('id', 'id-' + container.ID));
                 tr.append($("<td>").attr('id', 'state-' + container.ID));
@@ -109,12 +107,42 @@ $(document).ready(function () {
 
     messagesSource.onmessage = function (event) {
         var data = JSON.parse(event.data);
-        $('#message-container').append(
-            '<div class="alert alert-' + data.category + ' alert-dismissible fade show" role="alert">' +
-            data.text +
-            '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
-            '</div>'
-        );
+        let icon;
+        let toastHeaderBgColor;
+        const uniqueId = 'toast' + Date.now();
+        const timeSent = new Date(data.timeSent * 1000);
+        const now = new Date();
+        const diffInMilliseconds = now - timeSent;
+        const diffInMinutes = Math.floor(diffInMilliseconds / 1000 / 60);
+        // if data.category is success use success, error uses danger
+        switch (data.category.toLowerCase()) {
+            case 'success':
+                toastHeaderBgColor = 'success';
+                icon = `<i class="fa-solid fa-circle-check text-light"></i>`;
+                break;
+            case 'error':
+                toastHeaderBgColor = 'danger';
+                icon = `<i class="fa-solid fa-circle-exclamation  text-light"></i>`;
+                break;
+        }
+        $('#toast-container').append(`
+          <div id="${uniqueId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header d-flex align-items-center bg-${toastHeaderBgColor}">
+                <span style="margin-right: 10px">${icon}</span>
+                <strong class="me-auto  text-light">${data.category}</strong>
+                <small class="text-light">${diffInMinutes} mins ago</small>
+                <div data-bs-theme="dark">
+                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="toast-body">
+              ${data.text}
+            </div>
+          </div>
+        </div>
+      `);
+        // Initialize the toast
+        $('#' + uniqueId).toast('show');
     };
 
     // handle prune check box

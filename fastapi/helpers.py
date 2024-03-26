@@ -4,6 +4,7 @@ from fastapi import Request
 import aiodocker
 from aiodocker.exceptions import DockerError
 from aiodocker.docker import DockerContainer
+import time
 
 ASYNC_DOCKER_CLIENT = aiodocker.Docker()
 
@@ -35,8 +36,11 @@ async def subscribe_to_channel(req: Request, chan: str, redis: Redis):
 
 
 async def publish_message_data(message: str, category: str, redis: Redis):
+    # gets consumed by frontend via toasts
+    # need to pass alert text, category (error, success), and time when the message is posted
     await redis.publish(
-        "server_messages", json.dumps({"text": message, "category": category})
+        "server_messages",
+        json.dumps({"text": message, "category": category, "timeSent": time.time()}),
     )
 
 

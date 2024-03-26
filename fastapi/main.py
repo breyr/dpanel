@@ -102,7 +102,7 @@ async def perform_action(
             tasks = [
                 publish_message_data(
                     f"{error_msg} ({len(error_ids)}): {error_ids}",
-                    "danger",
+                    "Error",
                     redis=redis,
                 )
             ]
@@ -110,7 +110,7 @@ async def perform_action(
             tasks = [
                 publish_message_data(
                     f"{success_msg} ({len(ids) - len(error_ids)}):  {success_ids}",
-                    "success",
+                    "Success",
                     redis=redis,
                 )
             ]
@@ -118,13 +118,13 @@ async def perform_action(
             if error_ids:
                 tasks.append(
                     publish_message_data(
-                        f"{error_msg}: {error_ids}", "danger", redis=redis
+                        f"{error_msg}: {error_ids}", "Error", redis=redis
                     )
                 )
         await asyncio.gather(*tasks)
         return JSONResponse(content={"message": f"{success_msg}"}, status_code=200)
     except Exception as e:
-        await publish_message_data("API error, please try again", "danger", redis=redis)
+        await publish_message_data("API error, please try again", "Error", redis=redis)
         return JSONResponse(content={"message": "API error"}, status_code=400)
 
 
@@ -153,6 +153,7 @@ def info(container_id: str):
 @app.post("/api/system/prune")
 async def prune_system(req: Request):
     try:
+        # TODO: ASYNC call, prune doesnt exist in aiodocker
         pruned_containers = ASYNC_DOCKER_CLIENT.containers.prune()
         # client.images.prune()
         # client.networks.prune()
@@ -162,14 +163,14 @@ async def prune_system(req: Request):
         space_reclaimed = pruned_containers.get("SpaceReclaimed", 0)
         await publish_message_data(
             f"System pruned successfully: {num_deleted} containers deleted, {space_reclaimed} space reclaimed",
-            "success",
+            "Success",
             redis=redis,
         )
         return JSONResponse(
             content={"message": "System prune successfull"}, status_code=200
         )
     except DockerError as e:
-        await publish_message_data("API error, please try again", "danger", redis=redis)
+        await publish_message_data("API error, please try again", "Error", redis=redis)
         return JSONResponse(content={"message": "API error"}, status_code=400)
 
 
