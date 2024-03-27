@@ -26,11 +26,12 @@ type ContainerInfo struct {
 }
 
 type ImageInfo struct {
-	ID      string
-	Name    string
-	Tag     string
-	Created int64
-	Size    int64
+	ID            string
+	Name          string
+	Tag           string
+	Created       int64
+	Size          int64
+	NumContainers uint8
 }
 
 // Package level variables accessible by all functions
@@ -41,6 +42,20 @@ var redisClient = redis.NewClient(&redis.Options{
 	Password: "", // no password set
 	DB:       0,  // use default DB
 })
+
+func getRunningContainersPerImage(dockerClient *client.Client) (map[string]int, error) {
+	containers, err := dockerClient.ContainerList(ctx, container.ListOptions{All: true})
+	if err != nil {
+		return nil, err
+	}
+
+	containerCountPerImage := make(map[string]int)
+	for _, container := range containers {
+		containerCountPerImage[container.ImageID]++
+	}
+
+	return containerCountPerImage, nil
+}
 
 func publishHomepageData(dockerClient *client.Client) {
 	for {
@@ -85,8 +100,13 @@ func publishImagesList(dockerClient *client.Client) {
 		if err != nil {
 			log.Printf("Failed to list images: %v\n", err)
 		}
+		containerCountPerImage, err := getRunningContainersPerImage(dockerClient)
+		if err != nil {
+			log.Printf("Failed to get running containers per image %v\n", err)
+		}
 		var imageInfos []ImageInfo
 		for _, image := range images {
+			// get number of containers running per image
 			tagValue := "none"
 			imageName := "none"
 			if len(image.RepoTags) > 0 {
@@ -98,12 +118,21 @@ func publishImagesList(dockerClient *client.Client) {
 					tagValue = split[1]
 				}
 			}
+			// get number of containers running for this image
+			val, ok := containerCountPerImage[image.ID]
+			var containerCount uint8
+			if ok {
+				containerCount = uint8(val)
+			} else {
+				containerCount = 0
+			}
 			imageInfo := ImageInfo{
-				ID:      strings.Split(image.ID, ":")[1], // remove sha: from id
-				Name:    imageName,
-				Tag:     tagValue,
-				Created: image.Created,
-				Size:    image.Size,
+				ID:            strings.Split(image.ID, ":")[1], // remove sha: from id
+				Name:          imageName,
+				Tag:           tagValue,
+				Created:       image.Created,
+				Size:          image.Size,
+				NumContainers: containerCount,
 			}
 			imageInfos = append(imageInfos, imageInfo)
 		}
