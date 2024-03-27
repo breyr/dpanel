@@ -64,6 +64,7 @@ async def publish_message_data(message: str, category: str, redis: Redis):
 
 
 async def get_container_details(container: DockerContainer):
+    logging.info(f"Attempting to get details for {container}")
     return await container.show()
 
 
@@ -130,11 +131,23 @@ async def kill_container(container: DockerContainer):
 async def delete_container(container: DockerContainer):
     # delete shouldn't go off of status because it wouldn't exist!
     try:
+        logging.info(f"Attempting to delete container: {container}")
+        # stop running container before deletion
+        container_details = await get_container_details(container)
+        if (
+            container_details["State"]["Running"]
+            or container_details["State"]["Paused"]
+        ):
+            if container_details["State"]["Status"] != "exited":
+                logging.info(f"Attempting to stop running container: {container}")
+                await container.stop()
+                logging.info(f"Stoped running container: {container}")
         await container.delete()
+        logging.info(f"Deleted container: {container}")
     except DockerError as e:
         # already deleted
-        return {"message": "error", "objectId": container.short_id}
-    return {"message": "success", "objectId": container.short_id}
+        return {"message": "error", "objectId": container_details["Id"]}
+    return {"message": "success", "objectId": container_details["Id"]}
 
 
 async def delete_image(id: str):

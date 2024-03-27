@@ -92,6 +92,7 @@ async def perform_action(
                 container = await ASYNC_DOCKER_CLIENT.containers.get(id)
                 # logging.info(f"{container} container for {id}")
                 res = await action(container)
+                # logging.info(f"finished action for {id}")
             elif object_type == ObjectType.IMAGE:
                 res = await action(id)
             if res["message"] == "error":
@@ -100,7 +101,6 @@ async def perform_action(
                 error_ids.append(res["objectId"][:12])
             elif res["message"] == "success":
                 success_ids.append(res["objectId"][:12])
-            # logging.info(f"Finished action for container with id: {id}")
 
         # create list of taska and use asyncio.gather to run them concurrently
         tasks = [perform_action_and_handle_error(id) for id in ids]
@@ -206,7 +206,7 @@ async def start_containers(req: Request):
 
 
 @app.post("/api/containers/stop")
-async def pause_containers(req: Request):
+async def stop_containers(req: Request):
     return await perform_action(
         req,
         stop_container,
