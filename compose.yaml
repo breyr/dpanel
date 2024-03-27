@@ -10,7 +10,7 @@ services:
       - ./nginx:/app # bind mount for development
     ports:
       - 3000:3000
-  pubsub-go:
+  pubsub:
     build:
       context: ./pubsub-go
     volumes:
