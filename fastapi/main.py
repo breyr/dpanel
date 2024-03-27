@@ -38,7 +38,7 @@ redis: Redis = None
 
 app = FastAPI()
 
-origins = ["http://localhost:3000"]
+origins = ["http://127.0.0.1:3000"]
 
 app.add_middleware(
     CORSMiddleware,
