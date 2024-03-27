@@ -5,21 +5,31 @@ $(document).ready(function () {
     // Adds actions to all teh container buttons
     ['delete', 'start', 'stop', 'kill', 'restart', 'pause', 'resume'].forEach(action => {
         $(`#btn-${action}`).click(function () {
-            performAction(action, `btn-${action}`);
+            performActionContainer(action, `btn-${action}`);
+        });
+    });
+    // add actions to all the image section buttons
+    ['delete'].forEach(action => {
+        $(`#${action}-img-btn`).click(function () {
+            performActionImage(action, `${action}-img-btn`);
         });
     });
 
-    $("#loading").show();
+    // table spinners
+    $("#containers-loading").show();
+    $("#images-loading").show();
 
     // Get event sources
     var homepageSource = new EventSource('http://localhost:5002/api/streams/containerlist');
     var messagesSource = new EventSource('http://localhost:5002/api/streams/servermessages');
+    var imageListSource = new EventSource('http://localhost:5002/api/streams/imagelist');
 
     // Function to close EventSource connections
     // close() calls the call_on_close in server and unsubscribes from topic
     function closeEventSources() {
         homepageSource.close();
         messagesSource.close();
+        imageListSource.close();
     }
 
     // Close connections when the page is refreshed or closed
@@ -27,15 +37,15 @@ $(document).ready(function () {
         closeEventSources();
     });
 
-    var tbody = $("table tbody");
-    var previousState = {};
-    var firstLoad = true;
+    var containersTbody = $("#containers-tbody");
+    var previousStateContainers = {};
+    var firstLoadContainerList = true;
     homepageSource.onmessage = function (event) {
         var data = JSON.parse(event.data);
         // keep track of containerIds in the incoming data stream
         var containerIds = new Set(data.map(container => container.ID));
         // remove any rows with IDs not in the set
-        tbody.find('tr').each(function () {
+        containersTbody.find('tr').each(function () {
             var tr = $(this);
             var id = tr.attr('id').substring(4);  // remove 'row-' prefix
             if (!containerIds.has(id)) {
@@ -43,11 +53,11 @@ $(document).ready(function () {
             }
         });
         $.each(data, function (i, container) {
-            var tr = tbody.find('#row-' + container.ID);
+            var tr = containersTbody.find('#row-' + container.ID);
             if (!tr.length) {
                 // If the row does not exist, create it
                 tr = $("<tr>").attr('id', 'row-' + container.ID);
-                tr.append($("<td>").html('<input type="checkbox" class="tr-checkbox" value="' + container.ID + '" name="container"> <span class="spinner-border spinner-border-sm text-warning d-none" role="status" aria-hidden="true"></span>'));
+                tr.append($("<td>").html('<input type="checkbox" class="tr-container-checkbox" value="' + container.ID + '" name="container"> <span class="spinner-border spinner-border-sm text-warning d-none" role="status" aria-hidden="true"></span>'));
                 tr.append($("<td>").attr('id', 'name-' + container.ID));
                 tr.append($("<td>").attr('id', 'id-' + container.ID));
                 tr.append($("<td>").attr('id', 'state-' + container.ID));
@@ -56,13 +66,12 @@ $(document).ready(function () {
                 tr.append($("<td>").attr('id', 'port-' + container.ID));
                 tr.append($("<td>").html('<button class="transparent-btn" onclick="getInfo(\'' + container.ID + '\')"><i class="bi bi-info-circle text-primary"></i></button>'));
                 // first load, all rows are new so append in order the data was sent
-                // TODO: previous loads, this appends newly created containers to the bottom of the table, which we don't want, but we need to be able to track state
                 // if its the first load, append everything
                 // if its a newly created container, will have to prepend
-                if (firstLoad) {
-                    tbody.append(tr);
+                if (firstLoadContainerList) {
+                    containersTbody.append(tr);
                 } else {
-                    tbody.prepend(tr);
+                    containersTbody.prepend(tr);
                 }
             }
 
@@ -70,7 +79,7 @@ $(document).ready(function () {
             const attributes = ['Names', 'ID', 'State', 'Status', 'Image', 'Ports'];
             attributes.forEach(attr => {
                 // If the attribute has changed
-                if (previousState[container.ID]?.[attr] !== container[attr]) {
+                if (previousStateContainers[container.ID]?.[attr] !== container[attr]) {
                     switch (attr) {
                         case 'Names':
                             $(`#name-${container.ID}`).text(container.Names[0].substring(1));
@@ -95,13 +104,13 @@ $(document).ready(function () {
             });
 
             // Store the current state of the container for the next update
-            previousState[container.ID] = container;
+            previousStateContainers[container.ID] = container;
         });
-        if (firstLoad) {
-            firstLoad = false;
+        if (firstLoadContainerList) {
+            firstLoadContainerList = false;
         }
 
-        $("#loading").hide();
+        $("#containers-loading").hide();
     };
 
 
@@ -145,6 +154,94 @@ $(document).ready(function () {
         $('#' + uniqueId).toast('show');
     };
 
+    // handle new messages from image list stream
+    let previousStateImages = {};
+    let firstLoadImageList = true;
+    const imagesTbody = $("#images-tbody");
+    imageListSource.onmessage = function (event) {
+        const data = JSON.parse(event.data);
+        // Created - timestamp
+        // Id.split(":")[1].substring(12) - gets short id, otherwise complete hash
+        // RepoTags[0] - name of image
+        // Size (bytes) - convert to mb
+        // RepoTags[0].split(":")[1] gets tag of image
+        // Labels{} - holds compose information
+        // keep track of containerIds in the incoming data stream
+        // getting short id
+        const imageIds = new Set(data.map(image => image.ID));
+        // remove any rows with IDs not in the set
+        imagesTbody.find('tr').each(function () {
+            const tr = $(this);
+            const id = tr.attr('id').substring(4);  // remove 'row-' prefix
+            if (!imageIds.has(id)) {
+                tr.remove();
+            }
+        });
+        $.each(data, function (i, image) {
+            let tr = imagesTbody.find('#row-' + image.ID);
+            if (!tr.length) {
+                // If the row does not exist, create it
+                tr = $("<tr>").attr('id', 'row-' + image.ID);
+                tr.append($("<td>").html('<input type="checkbox" class="tr-image-checkbox" value="' + image.ID + '" name="container"> <span class="spinner-border spinner-border-sm text-warning d-none" role="status" aria-hidden="true"></span>'));
+                tr.append($("<td>").attr('id', 'name-' + image.ID));
+                tr.append($("<td>").attr('id', 'tag-' + image.ID));
+                tr.append($("<td>").attr('id', 'created-date-' + image.ID));
+                tr.append($("<td>").attr('id', 'created-time-' + image.ID));
+                tr.append($("<td>").attr('id', 'size-' + image.ID));
+                // first load, all rows are new so append in order the data was sent
+                // if its the first load, append everything
+                // if its a newly created container, will have to prepend
+                if (firstLoadImageList) {
+                    imagesTbody.append(tr);
+                } else {
+                    imagesTbody.prepend(tr);
+                }
+            }
+
+            // Define the attributes to be updated
+            const attributes = ['Name', 'Tag', 'Created', 'Size'];
+            attributes.forEach(attr => {
+                // If the attribute has changed
+                if (previousStateImages[image.ID]?.[attr] !== image[attr]) {
+                    switch (attr) {
+                        case 'Name':
+                            $(`#name-${image.ID}`).text(image.Name);
+                            break;
+                        case 'Tag':
+                            $(`#tag-${image.ID}`).html(`<span class="badge bg-secondary">${image.Tag}</span>`);
+                            break;
+                        case 'Created':
+                            const createdTimeStamp = new Date(image.Created * 1000);
+                            $(`#created-date-${image.ID}`).html(`<span>${createdTimeStamp.toLocaleDateString()}</span>`);
+                            $(`#created-time-${image.ID}`).html(`<span>${createdTimeStamp.toLocaleTimeString()}</span>`);
+                            break;
+                        case 'Size':
+                            // convert bytes to mb and gb if necessary
+                            const sizeInBytes = image.Size;
+                            const sizeInMb = sizeInBytes / 1048576
+                            const sizeInGb = sizeInMb / 1024
+                            let displaySize;
+                            if (sizeInGb < 1) {
+                                displaySize = `${sizeInMb.toFixed(2)} MB`;
+                            } else {
+                                displaySize = `${sizeInGb.toFixed(2)} GB`;
+                            }
+                            $(`#size-${image.ID}`).text(displaySize);
+                            break;
+                    }
+                }
+            });
+
+            // Store the current state of the container for the next update
+            previousStateImages[image.ID] = image;
+        });
+        if (firstLoadImageList) {
+            firstLoadImageList = false;
+        }
+
+        $("#images-loading").hide();
+    }
+
     // handle prune check box
     $('#btncheck1').change(function () {
         $('#confirm-prune').toggleClass('disabled');
@@ -171,7 +268,7 @@ $(document).ready(function () {
     // handle select all checkbox change
     $('#select-all').change(function () {
         // select all checkboxes with class of tr-checkbox and make them selected
-        $('.tr-checkbox').prop('checked', this.checked);
+        $('.tr-container-checkbox').prop('checked', this.checked);
         // enable/disable buttons
         if (this.checked) {
             $('#btn-stop, #btn-kill, #btn-restart, #btn-pause, #btn-delete, #btn-resume, #btn-start').removeClass('disabled');
@@ -180,12 +277,31 @@ $(document).ready(function () {
             $('#btn-stop, #btn-kill, #btn-restart, #btn-pause, #btn-delete, #btn-resume, #btn-start').addClass('disabled');
         }
     });
+    $('#select-all-image').change(function () {
+        // select all checkboxes with class of tr-checkbox and make them selected
+        $('.tr-image-checkbox').prop('checked', this.checked);
+        // enable/disable buttons
+        if (this.checked) {
+            $('#delete-img-btn').removeClass('disabled');
+        } else {
+            // If no checkboxes are checked, disable all buttons
+            $('#delete-img-btn').addClass('disabled');
+        }
+    });
 });
 
-// Enables buttons after checkbox input
-$(document).on('change', '.tr-checkbox', function () {
-    const checkedCount = $('.tr-checkbox:checked').length;
+// Enables container action buttons after checkbox input
+$(document).on('change', '.tr-container-checkbox', function () {
+    const checkedCount = $('.tr-container-checkbox:checked').length;
     const buttonSelector = '#btn-stop, #btn-kill, #btn-restart, #btn-pause, #btn-delete, #btn-resume, #btn-start';
+
+    $(buttonSelector).toggleClass('disabled', checkedCount === 0);
+});
+
+// Enables image action buttons after checkbox input
+$(document).on('change', '.tr-image-checkbox', function () {
+    const checkedCount = $('.tr-image-checkbox:checked').length;
+    const buttonSelector = '#delete-img-btn';
 
     $(buttonSelector).toggleClass('disabled', checkedCount === 0);
 });

@@ -77,7 +77,7 @@
                                         <i class="fa-solid fa-tree"></i> prune
                                     </button>
                                     <button class="btn btn-primary" data-bs-toggle="modal"
-                                        data-bs-target="#createContainerModal"><i class="fa-solid fa-plus"></i></i>
+                                        data-bs-target="#createContainerModal"><i class="fa-solid fa-plus"></i>
                                         container</button>
                                 </div>
 
@@ -151,10 +151,11 @@
                                         <th scope="col">Port Binding</th>
                                         <th scope="col">Actions</th>
                                     </thead>
-                                    <tbody>
+                                    <tbody id="containers-tbody">
                                     </tbody>
                                 </table>
-                                <div id="loading" style="display: none; color: rgba(0, 0, 0, 0.2);" class="text-center">
+                                <div id="containers-loading" style="display: none; color: rgba(0, 0, 0, 0.2);"
+                                    class="text-center">
                                     <div class="spinner-border text-info" role="status">
                                         <span class="sr-only">Loading...</span>
                                     </div>
@@ -196,8 +197,36 @@
                                 <i class="bi bi-chevron-down"></i>
                             </div>
                             <div class="collapse" id="imageDetails">
-                                <!-- Your content for the Images block goes here -->
-                                hello world
+                                <!-- action buttons -->
+                                <div class="mt-3">
+                                    <button class="btn btn-danger btn-sm mr-2 disabled" id="delete-img-btn">
+                                        <i class="bi bi-trash-fill"></i> delete
+                                    </button>
+                                </div>
+
+                                <!-- table of images -->
+                                <section class="flex-grow-1">
+                                    <table class="table">
+                                        <thead class="table-primary">
+                                            <th style="width:50px;"><input type="checkbox" class="me-2"
+                                                    id="select-all-image" />
+                                            </th>
+                                            <th scope="col">Name</th>
+                                            <th scope="col">Tag</th>
+                                            <th scope="col">Created Date</th>
+                                            <th scope="col">Created Time</th>
+                                            <th scope="col">Size</th>
+                                        </thead>
+                                        <tbody id="images-tbody">
+                                        </tbody>
+                                    </table>
+                                    <div id="images-loading" style="display: none; color: rgba(0, 0, 0, 0.2);"
+                                        class="text-center">
+                                        <div class="spinner-border text-info" role="status">
+                                            <span class="sr-only">Loading...</span>
+                                        </div>
+                                    </div>
+                                </section>
                             </div>
                         </div>
                     </div>
