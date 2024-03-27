@@ -178,6 +178,28 @@
                 </div>
                 <div class="collapse" id="statisticsDetails">
                     hello world
+                    <section class="flex-grow-1">
+                        <table class="table">
+                            <thead class="table-primary">
+                                <th style="width:50px;"><input type="checkbox" class="me-2"
+                                        id="select-all-image" />
+                                </th>
+                                <th scope="col">Name</th>
+                                <th scope="col">Tag</th>
+                                <th scope="col">Date</th>
+                                <th scope="col">Size</th>
+                                <th scope="col">Running</th>
+                            </thead>
+                            <tbody id="stats-tbody">
+                            </tbody>
+                        </table>
+                        <div id="images-loading" style="display: none; color: rgba(0, 0, 0, 0.2);"
+                            class="text-center">
+                            <div class="spinner-border text-info" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                        </div>
+                    </section>
                 </div>
             </div>
 

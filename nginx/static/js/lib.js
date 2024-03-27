@@ -234,7 +234,7 @@ $(document).ready(function () {
                                 const createdTimeStamp = new Date(image.Created * 1000);
                                 $(`#created-date-${image.ID}`).html(`<span>${createdTimeStamp.toLocaleDateString()}</span>`);
                                 break;
-                            case 'NumContainers':
+                                case 'NumContainers':
                                 $(`#used-by-${image.ID}`).html(`<span style="padding-left: 25px">${image.NumContainers}</span>`);
                                 break;
                             case 'Size':
@@ -265,6 +265,14 @@ $(document).ready(function () {
         };
     }
     initImageListES();
+
+    function StatsList() {
+        const statsDiv = $("#statisticsDetails");
+        containerStats = new EventSource('http://localhost:5002/api/streams/containerstats');
+        statsDiv.append("<p> </p>")
+
+    }
+
 
     // Function to close EventSource connections
     // close() calls the call_on_close in server and unsubscribes from topic

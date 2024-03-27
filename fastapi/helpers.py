@@ -67,6 +67,10 @@ async def get_container_details(container: DockerContainer):
     return await container.show()
 
 
+async def get_container_stats(container: DockerContainer):
+    return await container.stats(stream = True)
+
+
 async def pause_container(container: DockerContainer):
     container_details = await get_container_details(container)
     if container_details["State"]["Running"]:

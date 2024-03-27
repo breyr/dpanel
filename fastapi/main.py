@@ -21,6 +21,7 @@ from helpers import (
     delete_container,
     delete_image,
     ObjectType,
+    get_container_stats,
 )
 
 # setup logging for docker container
@@ -155,6 +156,11 @@ async def server_messages(req: Request):
 @app.get("/api/streams/imagelist")
 async def image_list(req: Request):
     return EventSourceResponse(subscribe_to_channel(req, "images_list", redis))
+
+
+@app.get("/api/streams/containerstats")
+async def container_stat(req: Request):
+    return EventSourceResponse(subscribe_to_channel(req, "container_stats", redis)) #finish this line
 
 
 @app.get("/api/containers/info/{container_id}")
