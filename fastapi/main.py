@@ -200,7 +200,7 @@ async def start_containers(req: Request):
 
 
 @app.post("/api/containers/stop")
-async def pause_containers(req: Request):
+async def stop_container(req: Request):
     return await perform_action(
         req,
         stop_container,
