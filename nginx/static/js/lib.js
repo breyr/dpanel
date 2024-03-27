@@ -205,8 +205,8 @@ $(document).ready(function () {
                     tr.append($("<td>").attr('id', 'name-' + image.ID));
                     tr.append($("<td>").attr('id', 'tag-' + image.ID));
                     tr.append($("<td>").attr('id', 'created-date-' + image.ID));
-                    tr.append($("<td>").attr('id', 'created-time-' + image.ID));
                     tr.append($("<td>").attr('id', 'size-' + image.ID));
+                    tr.append($("<td>").attr('id', 'used-by-' + image.ID));
                     // first load, all rows are new so append in order the data was sent
                     // if its the first load, append everything
                     // if its a newly created container, will have to prepend
@@ -218,7 +218,7 @@ $(document).ready(function () {
                 }
 
                 // Define the attributes to be updated
-                const attributes = ['Name', 'Tag', 'Created', 'Size'];
+                const attributes = ['Name', 'Tag', 'Created', 'NumContainers', 'Size'];
                 attributes.forEach(attr => {
                     // If the attribute has changed
                     if (previousStateImages[image.ID]?.[attr] !== image[attr]) {
@@ -233,7 +233,9 @@ $(document).ready(function () {
                             case 'Created':
                                 const createdTimeStamp = new Date(image.Created * 1000);
                                 $(`#created-date-${image.ID}`).html(`<span>${createdTimeStamp.toLocaleDateString()}</span>`);
-                                $(`#created-time-${image.ID}`).html(`<span>${createdTimeStamp.toLocaleTimeString()}</span>`);
+                                break;
+                            case 'NumContainers':
+                                $(`#used-by-${image.ID}`).html(`<span style="padding-left: 25px">${image.NumContainers}</span>`);
                                 break;
                             case 'Size':
                                 // convert bytes to mb and gb if necessary
