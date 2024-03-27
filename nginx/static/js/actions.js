@@ -32,8 +32,9 @@ function getPortBindings(portBindings) {
   return result;
 }
 
-function toggleSpinnerAndButton(actionBtnId, showCheckbox = true) {
-  const checkboxes = $('.tr-checkbox:checked');
+function toggleSpinnerAndButton(objectType, actionBtnId, showCheckbox = true) {
+  // objectType is container, image, or volume
+  const checkboxes = $(`.tr-${objectType}-checkbox:checked`);
   checkboxes.each(function () {
     const row = $(this).closest('tr');
     row.find('.spinner-border').toggleClass('d-none');
@@ -45,16 +46,16 @@ function toggleSpinnerAndButton(actionBtnId, showCheckbox = true) {
   $('#' + actionBtnId).prop('disabled', false);
 }
 
-function performAction(action, actionBtnId) {
-  const checkedIds = $('.tr-checkbox:checked').map(function () {
+function performActionContainer(action, actionBtnId) {
+  const checkedIds = $('.tr-container-checkbox:checked').map(function () {
     return this.value;
   }).get();
   // hide checkboxes
-  $('.tr-checkbox:checked').css('display', 'none');
+  $('.tr-container-checkbox:checked').css('display', 'none');
   // disable clicked action button
   $('#' + actionBtnId).prop('disabled', true);
 
-  toggleSpinnerAndButton(actionBtnId, false);
+  toggleSpinnerAndButton('container', actionBtnId, false);
 
   $.ajax({
     url: `http://localhost:5002/api/containers/${action}`,
@@ -62,10 +63,37 @@ function performAction(action, actionBtnId) {
     contentType: 'application/json',
     data: JSON.stringify({ 'ids': checkedIds }),
     success: function (result) {
-      toggleSpinnerAndButton(actionBtnId);
+      toggleSpinnerAndButton('container', actionBtnId);
     },
     error: function (result) {
-      toggleSpinnerAndButton(actionBtnId);
+      toggleSpinnerAndButton('container', actionBtnId);
+    }
+  });
+}
+
+function performActionImage(action, actionBtnId) {
+  const checkedIds = $('.tr-image-checkbox:checked').map(function () {
+    return this.value;
+  }).get();
+  // hide checkboxes
+  $('.tr-image-checkbox:checked').css('display', 'none');
+  // disable clicked action button
+  $('#' + actionBtnId).prop('disabled', true);
+
+  toggleSpinnerAndButton('image', actionBtnId, false);
+
+  console.log(checkedIds);
+
+  $.ajax({
+    url: `http://localhost:5002/api/images/${action}`,
+    type: 'POST',
+    contentType: 'application/json',
+    data: JSON.stringify({ 'ids': checkedIds }),
+    success: function (result) {
+      toggleSpinnerAndButton('image', actionBtnId);
+    },
+    error: function (result) {
+      toggleSpinnerAndButton('image', actionBtnId);
     }
   });
 }

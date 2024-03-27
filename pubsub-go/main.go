@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 	"github.com/go-redis/redis"
 )
@@ -21,6 +23,14 @@ type ContainerInfo struct {
 	State  string
 	Names  []string
 	Ports  []types.Port
+}
+
+type ImageInfo struct {
+	ID      string
+	Name    string
+	Tag     string
+	Created int64
+	Size    int64
 }
 
 // Package level variables accessible by all functions
@@ -61,10 +71,50 @@ func publishHomepageData(dockerClient *client.Client) {
 
 		err = redisClient.Publish("containers_list", containersJSON).Err()
 		if err != nil {
-			log.Printf("Failed to publish containers to Redis: %v\n", err)
+			log.Printf("Failed to publish containers list to Redis: %v\n", err)
 			continue
 		}
 
+		time.Sleep(time.Second)
+	}
+}
+
+func publishImagesList(dockerClient *client.Client) {
+	for {
+		images, err := dockerClient.ImageList(ctx, image.ListOptions{All: true})
+		if err != nil {
+			log.Printf("Failed to list images: %v\n", err)
+		}
+		var imageInfos []ImageInfo
+		for _, image := range images {
+			tagValue := "none"
+			imageName := "none"
+			if len(image.RepoTags) > 0 {
+				// set image Name
+				imageName = image.RepoTags[0]
+				// get image tag
+				split := strings.Split(imageName, ":")
+				if len(split) >= 2 {
+					tagValue = split[1]
+				}
+			}
+			imageInfo := ImageInfo{
+				ID:      strings.Split(image.ID, ":")[1], // remove sha: from id
+				Name:    imageName,
+				Tag:     tagValue,
+				Created: image.Created,
+				Size:    image.Size,
+			}
+			imageInfos = append(imageInfos, imageInfo)
+		}
+		imagesJSON, err := json.Marshal(imageInfos)
+		if err != nil {
+			log.Printf("Failed to marshal images to JSON: %v\n", err)
+		}
+		err = redisClient.Publish("images_list", imagesJSON).Err()
+		if err != nil {
+			log.Printf("Failed to publish image list to Redis: %v\n", err)
+		}
 		time.Sleep(time.Second)
 	}
 }
@@ -127,6 +177,7 @@ func main() {
 
 	go publishContainerStats(dockerClient)
 	go publishHomepageData(dockerClient)
+	go publishImagesList(dockerClient)
 
 	// blocking operation, puts main() goroutine in an idle state waiting for all other goroutines to finish
 	select {}

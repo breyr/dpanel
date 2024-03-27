@@ -19,6 +19,8 @@ from helpers import (
     restart_container,
     resume_container,
     delete_container,
+    delete_image,
+    ObjectType,
 )
 
 # setup logging for docker container
@@ -71,7 +73,11 @@ app.add_event_handler("shutdown", close_redis)
 
 
 async def perform_action(
-    req: Request, action: Callable, success_msg: str, error_msg: str
+    req: Request,
+    action: Callable,
+    object_type: ObjectType,
+    success_msg: str,
+    error_msg: str,
 ):
     try:
         data = await req.json()
@@ -81,15 +87,18 @@ async def perform_action(
 
         async def perform_action_and_handle_error(id: str):
             # logging.info(f"Performing action for container with id: {id}")
-            container = await ASYNC_DOCKER_CLIENT.containers.get(id)
-            # logging.info(f"{container} container for {id}")
-            res = await action(container)
+            if object_type == ObjectType.CONTAINER:
+                container = await ASYNC_DOCKER_CLIENT.containers.get(id)
+                # logging.info(f"{container} container for {id}")
+                res = await action(container)
+            elif object_type == ObjectType.IMAGE:
+                res = await action(id)
             if res["message"] == "error":
                 # race condition?
                 # substring 0-12 for short id
-                error_ids.append(res["containerId"][:12])
+                error_ids.append(res["objectId"][:12])
             elif res["message"] == "success":
-                success_ids.append(res["containerId"][:12])
+                success_ids.append(res["objectId"][:12])
             # logging.info(f"Finished action for container with id: {id}")
 
         # create list of taska and use asyncio.gather to run them concurrently
@@ -138,9 +147,14 @@ async def container_list(req: Request):
 
 
 @app.get("/api/streams/servermessages")
-async def container_list(req: Request):
+async def server_messages(req: Request):
     # passes subscribe_to_channel async generator to consume the messages it yields
     return EventSourceResponse(subscribe_to_channel(req, "server_messages", redis))
+
+
+@app.get("/api/streams/imagelist")
+async def image_list(req: Request):
+    return EventSourceResponse(subscribe_to_channel(req, "images_list", redis))
 
 
 @app.get("/api/containers/info/{container_id}")
@@ -177,47 +191,86 @@ async def prune_system(req: Request):
 @app.post("/api/containers/start")
 async def start_containers(req: Request):
     return await perform_action(
-        req, start_container, "Containers started", "Containers already started"
+        req,
+        start_container,
+        ObjectType.CONTAINER,
+        "Containers started",
+        "Containers already started",
     )
 
 
 @app.post("/api/containers/stop")
 async def pause_containers(req: Request):
     return await perform_action(
-        req, stop_container, "Containers stopped", "Containers already stopped"
+        req,
+        stop_container,
+        ObjectType.CONTAINER,
+        "Containers stopped",
+        "Containers already stopped",
     )
 
 
 @app.post("/api/containers/kill")
 async def kill_containers(req: Request):
     return await perform_action(
-        req, kill_container, "Containers killed", "Containers already killed"
+        req,
+        kill_container,
+        ObjectType.CONTAINER,
+        "Containers killed",
+        "Containers already killed",
     )
 
 
 @app.post("/api/containers/restart")
 async def restart_containers(req: Request):
     return await perform_action(
-        req, restart_container, "Containers restarted", "Containers already restarted"
+        req,
+        restart_container,
+        ObjectType.CONTAINER,
+        "Containers restarted",
+        "Containers already restarted",
     )
 
 
 @app.post("/api/containers/pause")
 async def pause_containers(req: Request):
     return await perform_action(
-        req, pause_container, "Containers paused", "Containers already paused"
+        req,
+        pause_container,
+        ObjectType.CONTAINER,
+        "Containers paused",
+        "Containers already paused",
     )
 
 
 @app.post("/api/containers/resume")
 async def resume_containers(req: Request):
     return await perform_action(
-        req, resume_container, "Containers resumed", "Containers already resumed"
+        req,
+        resume_container,
+        ObjectType.CONTAINER,
+        "Containers resumed",
+        "Containers already resumed",
     )
 
 
 @app.post("/api/containers/delete")
 async def delete_containers(req: Request):
     return await perform_action(
-        req, delete_container, "Containers deleted", "Containers already deleted"
+        req,
+        delete_container,
+        ObjectType.CONTAINER,
+        "Containers deleted",
+        "Containers already deleted",
+    )
+
+
+@app.post("/api/images/delete")
+async def delete_images(req: Request):
+    return await perform_action(
+        req,
+        delete_image,
+        ObjectType.IMAGE,
+        success_msg="Images deleted",
+        error_msg="Images already delted",
     )
