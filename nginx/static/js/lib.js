@@ -205,7 +205,8 @@ $(document).ready(function () {
                 if (previousStateImages[image.ID]?.[attr] !== image[attr]) {
                     switch (attr) {
                         case 'Name':
-                            $(`#name-${image.ID}`).text(image.Name);
+                            let formattedName = image.Name.split(':')[0];
+                            $(`#name-${image.ID}`).text(formattedName);
                             break;
                         case 'Tag':
                             $(`#tag-${image.ID}`).html(`<span class="badge bg-secondary">${image.Tag}</span>`);

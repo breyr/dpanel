@@ -19,3 +19,7 @@ td {
   background-color: transparent !important;
   color: rgb(70, 70, 70) !important;
 }
+
+.button-box {
+  margin-bottom: 10px !important;
+}

@@ -48,7 +48,7 @@
                     <div class="d-flex justify-content-between mb-3">
                         <!-- Inside the drop down -->
                         <main style="width: 100% !important; padding-top: 20px;">
-                            <div class="d-flex justify-content-between mb-3">
+                            <div class="d-flex justify-content-between mb-3 button-box">
                                 <div class="btn-group" role="group" aria-label="Basic example">
                                     <button type="button" class="btn btn-success disabled" id="btn-start"><i
                                             class="bi bi-play-fill"></i>
@@ -197,12 +197,16 @@
                                 <i class="bi bi-chevron-down"></i>
                             </div>
                             <div class="collapse" id="imageDetails">
-                                <!-- action buttons -->
-                                <div class="mt-3">
-                                    <button class="btn btn-danger btn-sm mr-2 disabled" id="delete-img-btn">
-                                        <i class="bi bi-trash-fill"></i> delete
-                                    </button>
-                                </div>
+                                <main style="width: 100% !important; padding-top: 20px;">
+                                    <div class="d-flex justify-content-between mb-3 button-box">
+                                        <button type="button" class="btn btn-primary btn-sm mr-2"
+                                            id="create-img-btn">
+                                            <i class="fa-solid fa-plus"></i> Create
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-sm mr-2 disabled"
+                                            id="delete-img-btn"><i class="bi bi-trash-fill"></i> Delete</button>
+                                    </div>
+                                </main>
 
                                 <!-- table of images -->
                                 <section class="flex-grow-1">
@@ -213,8 +217,8 @@
                                             </th>
                                             <th scope="col">Name</th>
                                             <th scope="col">Tag</th>
-                                            <th scope="col">Created Date</th>
-                                            <th scope="col">Created Time</th>
+                                            <th scope="col">Date</th>
+                                            <th scope="col">Time</th>
                                             <th scope="col">Size</th>
                                         </thead>
                                         <tbody id="images-tbody">
