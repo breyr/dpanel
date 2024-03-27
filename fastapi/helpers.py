@@ -136,10 +136,7 @@ async def delete_container(container: DockerContainer):
 async def delete_image(id: str):
     # delete any images forcefully
     try:
-        logging.info(id)
-        # delete returns a list of images that were deleted
-        res = await DOCKER_IMAGES.delete(name=id)
-        logging.info(res)
+        await DOCKER_IMAGES.delete(name=id)
     except DockerError as e:
         # already deleted
         return {"message": "error", "objectId": id[:12]}
