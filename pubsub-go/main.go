@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"strings"
 	"sync"
@@ -157,12 +156,11 @@ func publishContainerStats(dockerClient *client.Client) {
 		}
 
 		var wg sync.WaitGroup
-		// the number of go routines that will be spawned
 		wg.Add(len(containers))
+
+		var containerStats []map[string]interface{}
 		for _, container := range containers {
-			// concurrently fetch the stats for each container
 			go func(container types.Container) {
-				// decrements the wait group by one, AFTER this function is complete
 				defer wg.Done()
 
 				stats, err := dockerClient.ContainerStats(ctx, container.ID, false)
@@ -178,21 +176,39 @@ func publishContainerStats(dockerClient *client.Client) {
 					return
 				}
 
-				statsJSON, err := json.Marshal(statsData)
-				if err != nil {
-					log.Printf("Failed to marshal stats to JSON for container %s: %v\n", container.ID, err)
-					return
+				cpuStats := statsData["cpu_stats"].(map[string]interface{})
+				cpuUsage := cpuStats["cpu_usage"].(map[string]interface{})
+				systemCpuUsage := cpuStats["system_cpu_usage"].(float64)
+				cpuPercent := (cpuUsage["total_usage"].(float64) / systemCpuUsage) * 100
+
+				memoryStats := statsData["memory_stats"].(map[string]interface{})
+				memoryUsage := memoryStats["usage"].(float64)
+				memoryLimit := memoryStats["limit"].(float64)
+				memoryPercent := (memoryUsage / memoryLimit) * 100
+
+				specificStats := map[string]interface{}{
+					"container_id":   container.ID,
+					"cpu_percent":    cpuPercent,
+					"memory_usage":   memoryUsage,
+					"memory_limit":   memoryLimit,
+					"memory_percent": memoryPercent,
 				}
 
-				err = redisClient.Publish(fmt.Sprintf("container_metrics_%s", container.ID), statsJSON).Err()
-				if err != nil {
-					log.Printf("Failed to publish stats for container %s to Redis: %v\n", container.ID, err)
-					return
-				}
+				containerStats = append(containerStats, specificStats)
 			}(container)
 		}
-		// publishContainerStats goroutine waits for all stat collection goroutines to complete
+
 		wg.Wait()
+
+		containerStatsJSON, err := json.Marshal(containerStats)
+		if err != nil {
+			log.Printf("Failed to marshal stats to JSON for containerStats")
+		}
+
+		err = redisClient.Publish("container_metrics", containerStatsJSON).Err()
+		if err != nil {
+			return
+		}
 
 		time.Sleep(time.Second)
 	}

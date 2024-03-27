@@ -64,6 +64,7 @@ async def publish_message_data(message: str, category: str, redis: Redis):
 
 
 async def get_container_details(container: DockerContainer):
+    logging.info(f"Attempting to get details for {container}")
     return await container.show()
 
 
@@ -129,10 +130,14 @@ async def delete_container(container: DockerContainer):
         logging.info(f"Attempting to delete container: {container}")
         # stop running container before deletion
         container_details = await get_container_details(container)
-        if container_details["State"]["Running"]:
-            logging.info(f"Attempting to stop running container: {container}")
-            await container.stop()
-            logging.info(f"Stoped running container: {container}")
+        if (
+            container_details["State"]["Running"]
+            or container_details["State"]["Paused"]
+        ):
+            if container_details["State"]["Status"] != "exited":
+                logging.info(f"Attempting to stop running container: {container}")
+                await container.stop()
+                logging.info(f"Stoped running container: {container}")
         await container.delete()
         logging.info(f"Deleted container: {container}")
     except DockerError as e:
