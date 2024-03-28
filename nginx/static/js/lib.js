@@ -18,6 +18,7 @@ $(document).ready(function () {
     // table spinners
     $("#containers-loading").show();
     $("#images-loading").show();
+    $("#stats-loading").show();
 
     // Get event sources
     var containerListSource = null;
@@ -266,12 +267,90 @@ $(document).ready(function () {
     }
     initImageListES();
 
-    function StatsList() {
-        const statsDiv = $("#statisticsDetails");
-        containerStats = new EventSource('http://localhost:5002/api/streams/containerstats');
-        statsDiv.append("<p> </p>")
+    var containerStatsSource = null;
+    function initContainerStatsES() {
+        if (containerStatsSource == null || containerStatsSource.readyState == 2) {
+            containerStatsSource = new EventSource('http://localhost:5002/api/streams/containermetrics');
+            containerStatsSource.onerror = function (event) {
+                if (containerStatsSource.readyState == 2) {
+                    // retry connection to ES
+                    setTimeout(initContainerStatsES, 5000);
+                }
+            }
+        }
 
+        let previousStateStats = {};
+        let firstLoadStatsList = true;
+        const statsTbody = $("#stats-tbody");
+        containerStatsSource.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+
+            const containerIds = new Set(data.map(container => container.ID));
+
+            statsTbody.find('tr').each(function () {
+                const tr = $(this);
+                const id = tr.attr('id').substring(4);  // remove 'row-' prefix
+                if (!containerIds.has(id)) {
+                    tr.remove();
+                }
+            });
+            $.each(data, function (i, container) {
+                let tr = statsTbody.find('#row-' + container.ID);
+                if (!tr.length) {
+                    // If the row does not exist, create it
+                    tr = $("<tr>").attr('id', 'row-' + container.ID);
+                    tr.append($("<td>").html('<input type="checkbox" class="tr-stats-checkbox" value="' + container.ID + '" name="container"> <span class="spinner-border spinner-border-sm text-warning d-none" role="status" aria-hidden="true"></span>'));
+                    tr.append($("<td>").attr('id', 'name-' + container.ID));
+                    tr.append($("<td>").attr('id', 'cpu-percent-' + container.ID));
+                    tr.append($("<td>").attr('id', 'memory-usage-' + container.ID));
+                    tr.append($("<td>").attr('id', 'memory-limit-' + container.ID));
+                    tr.append($("<td>").attr('id', 'memory-percent-' + container.ID));
+                    // first load, all rows are new so append in order the data was sent
+                    // if its the first load, append everything
+                    // if its a newly created container, will have to prepend
+                    if (firstLoadStatsList) {
+                        statsTbody.append(tr);
+                    } else {
+                        statsTbody.prepend(tr);
+                    }
+                }
+
+                // Define the attributes to be updated
+                const attributes = ['Name', 'CpuPercent', 'MemUsage', 'MemLimit', 'MemPercent'];
+                attributes.forEach(attr => {
+                    // If the attribute has changed
+                    if (previousStateStats[container.ID]?.[attr] !== container[attr]) {
+                        switch (attr) {
+                            case 'Names':
+                                $(`#name-${container.ID}`).text(container.Names[0].substring(1));
+                                break;
+                            case 'CpuPercent':
+                                $(`#cpu-percent-${container.ID}`).html(`<span>${container.cpuPercent}</span>`);
+                                break;
+                            case 'MemUsage':
+                                $(`#memory-usage-${container.ID}`).html(`<span>${container.memoryUsage}</span>`);
+                                break;
+                            case 'MemLimit':
+                                $(`#memory-limit-${container.ID}`).html(`<span style="padding-left: 25px">${container.memoryLimit}</span>`);
+                                break;
+                            case 'MemPercent':
+                                $(`#memory-percent-${container.memoryPercent}`);
+                                break;
+                        }
+                    }
+                });
+
+                // Store the current state of the container for the next update
+                previousStateStats[container.ID] = container;
+            });
+            if (firstLoadStatsList) {
+                firstLoadStatsList = false;
+            }
+
+            $("#stats-loading").hide();
+        };
     }
+    initContainerStatsES()
 
 
     // Function to close EventSource connections
@@ -280,6 +359,7 @@ $(document).ready(function () {
         containerListSource.close();
         messagesSource.close();
         imageListSource.close();
+        containerStatsSource.close();
     }
 
     // Close connections when the page is refreshed or closed
