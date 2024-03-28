@@ -158,9 +158,9 @@ async def image_list(req: Request):
     return EventSourceResponse(subscribe_to_channel(req, "images_list", redis))
 
 
-@app.get("/api/streams/containerstats")
+@app.get("/api/streams/containermetrics")
 async def container_stat(req: Request):
-    return EventSourceResponse(subscribe_to_channel(req, "container_stats", redis)) #finish this line
+    return EventSourceResponse(subscribe_to_channel(req, "container_metrics", redis))
 
 
 @app.get("/api/containers/info/{container_id}")
