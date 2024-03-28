@@ -6,10 +6,13 @@ services:
       context: ./nginx
       dockerfile: Dockerfile
     restart: on-failure
-    volumes:
-      - ./nginx:/app # bind mount for development
     ports:
       - 3000:3000
+    develop:
+      watch:
+        - action: sync
+          path: ./nginx
+          target: /app
   pubsub:
     build:
       context: ./pubsub-go
@@ -18,6 +21,11 @@ services:
     restart: on-failure
     depends_on:
       - redis
+    develop:
+      watch:
+        - action: rebuild
+          path: ./pubsub-go/main.go
+          target: /app
   fastapi:
     build:
       context: ./fastapi
@@ -25,10 +33,14 @@ services:
       - 5002:5002
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./fastapi:/code
     restart: on-failure
     depends_on:
       - redis
+    develop:
+      watch:
+        - action: sync
+          path: ./fastapi
+          target: /code
   redis:
     image: redis:latest
     ports:
