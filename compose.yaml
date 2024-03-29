@@ -38,7 +38,7 @@ services:
       - redis
     develop:
       watch:
-        - action: sync
+        - action: sync+restart
           path: ./fastapi
           target: /code
   redis:
