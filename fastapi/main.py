@@ -20,6 +20,7 @@ from helpers import (
     resume_container,
     delete_container,
     delete_image,
+    pull_image,
     ObjectType,
 )
 
@@ -81,59 +82,84 @@ async def perform_action(
 ):
     try:
         data = await req.json()
-        ids = data["ids"]
-        error_ids = []
-        success_ids = []
+        ids = data.get("ids", [])
+        from_image = data.get("image", "")
+        tag = data.get("tag", "")
+        error_ids_msgs = []
+        success_ids_msgs = []
+        logging.info(
+            f"\nRequest Data: {data}\nIds: {ids}\nImage to pull: {from_image}\nImage tag: {tag}\n"
+        )
 
-        async def perform_action_and_handle_error(id: str):
-            # logging.info(f"Performing action for container with id: {id}")
+        async def perform_action_and_handle_error(
+            id: str, publish_image: str = None, tag: str = None
+        ):
             if object_type == ObjectType.CONTAINER:
                 container = await ASYNC_DOCKER_CLIENT.containers.get(id)
-                # logging.info(f"{container} container for {id}")
                 res = await action(container)
-                # logging.info(f"finished action for {id}")
             elif object_type == ObjectType.IMAGE:
-                res = await action(id)
-            if res["message"] == "error":
-                # race condition?
-                # substring 0-12 for short id
-                error_ids.append(res["objectId"][:12])
-            elif res["message"] == "success":
-                success_ids.append(res["objectId"][:12])
+                # for pulling an image
+                if publish_image:
+                    res = await action(publish_image, tag)
+                else:
+                    # for deleting an image
+                    res = await action(id)
+            return res
 
-        # create list of taska and use asyncio.gather to run them concurrently
-        tasks = [perform_action_and_handle_error(id) for id in ids]
+        tasks = []
+        # create list of tasks and use asyncio.gather to run them concurrently
+        if ids:
+            tasks.extend([perform_action_and_handle_error(id) for id in ids])
+        if from_image:
+            tasks.append(perform_action_and_handle_error(None, from_image, tag))
+
         # the * is list unpacking
-        await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks)
 
-        # no containers had the action performed
-        if len(ids) - len(error_ids) == 0:
-            tasks = [
+        for res in results:
+            if res["type"] == "error":
+                if "statusCode" in res:
+                    # get message from DockerError
+                    error_ids_msgs.append(res["message"])
+                else:
+                    # get short id of object's full id
+                    error_ids_msgs.append(res["objectId"][:12])
+            elif res["type"] == "success":
+                if "message" in res and "status" in res["message"]:
+                    # append result from pulling an image
+                    success_ids_msgs.append(res["message"]["status"])
+                else:
+                    success_ids_msgs.append(res["objectId"][:12])
+
+        publish_tasks = []
+        if success_ids_msgs:
+            publish_tasks.append(
                 publish_message_data(
-                    f"{error_msg} ({len(error_ids)}): {error_ids}",
-                    "Error",
-                    redis=redis,
-                )
-            ]
-        else:
-            tasks = [
-                publish_message_data(
-                    f"{success_msg} ({len(ids) - len(error_ids)}):  {success_ids}",
+                    f"{success_msg} ({len(success_ids_msgs)}):  {success_ids_msgs}",
                     "Success",
                     redis=redis,
                 )
-            ]
-            # publish any error ids
-            if error_ids:
-                tasks.append(
-                    publish_message_data(
-                        f"{error_msg}: {error_ids}", "Error", redis=redis
-                    )
+            )
+
+        if error_ids_msgs:
+            publish_tasks.append(
+                publish_message_data(
+                    f"{error_msg}: {error_ids_msgs}", "Error", redis=redis
                 )
-        await asyncio.gather(*tasks)
-        return JSONResponse(content={"message": f"{success_msg}"}, status_code=200)
+            )
+
+        await asyncio.gather(*publish_tasks)
+
+        if error_ids_msgs:
+            return JSONResponse(
+                content={"message": f"{error_msg}: {error_ids_msgs}"}, status_code=400
+            )
+        else:
+            return JSONResponse(content={"message": f"{success_msg}"}, status_code=200)
     except Exception as e:
-        await publish_message_data("API error, please try again", "Error", redis=redis)
+        await publish_message_data(
+            f"API error, please try again: {e}", "Error", redis=redis
+        )
         return JSONResponse(content={"message": "API error"}, status_code=400)
 
 
@@ -272,5 +298,16 @@ async def delete_images(req: Request):
         delete_image,
         ObjectType.IMAGE,
         success_msg="Images deleted",
-        error_msg="Images already delted",
+        error_msg="Error, check if containers are running",
+    )
+
+
+@app.post("/api/images/pull")
+async def pull_images(req: Request):
+    return await perform_action(
+        req,
+        pull_image,
+        ObjectType.IMAGE,
+        success_msg="Image pulled",
+        error_msg="Error",
     )

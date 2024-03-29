@@ -2,6 +2,9 @@
 
 $(document).ready(function () {
 
+    // remove pull validation errors div
+    $('#pull-validation-errors').empty();
+
     // Adds actions to all teh container buttons
     ['delete', 'start', 'stop', 'kill', 'restart', 'pause', 'resume'].forEach(action => {
         $(`#btn-${action}`).click(function () {
@@ -9,7 +12,7 @@ $(document).ready(function () {
         });
     });
     // add actions to all the image section buttons
-    ['delete'].forEach(action => {
+    ['delete', 'pull'].forEach(action => {
         $(`#${action}-img-btn`).click(function () {
             performActionImage(action, `${action}-img-btn`);
         });
@@ -179,6 +182,7 @@ $(document).ready(function () {
         const imagesTbody = $("#images-tbody");
         imageListSource.onmessage = function (event) {
             const data = JSON.parse(event.data);
+            console.log(data);
             // Created - timestamp
             // Id.split(":")[1].substring(12) - gets short id, otherwise complete hash
             // RepoTags[0] - name of image

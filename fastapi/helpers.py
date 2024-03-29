@@ -25,7 +25,7 @@ class ObjectType(enum.Enum):
 
 
 ASYNC_DOCKER_CLIENT = aiodocker.Docker()
-DOCKER_IMAGES = aiodocker.docker.DockerImages(ASYNC_DOCKER_CLIENT)
+DOCKER_IMAGES_INTERFACE = aiodocker.docker.DockerImages(ASYNC_DOCKER_CLIENT)
 
 # "State":{
 #       "Status":"exited",
@@ -72,36 +72,36 @@ async def pause_container(container: DockerContainer):
     container_details = await get_container_details(container)
     if container_details["State"]["Running"]:
         await container.pause()
-        return {"message": "success", "objectId": container_details["Id"]}
+        return {"type": "success", "objectId": container_details["Id"]}
     # already paused
-    return {"message": "error", "objectId": container_details["Id"]}
+    return {"type": "error", "objectId": container_details["Id"]}
 
 
 async def resume_container(container: DockerContainer):
     container_details = await get_container_details(container)
     if container_details["State"]["Paused"]:
         await container.unpause()
-        return {"message": "success", "objectId": container_details["Id"]}
+        return {"type": "success", "objectId": container_details["Id"]}
     # already in a running state
-    return {"message": "error", "objectId": container_details["Id"]}
+    return {"type": "error", "objectId": container_details["Id"]}
 
 
 async def start_container(container: DockerContainer):
     container_details = await get_container_details(container)
     if container_details["State"]["Status"] == "exited":
         await container.start()
-        return {"message": "success", "objectId": container.id}
+        return {"type": "success", "objectId": container.id}
     # already in a running state
-    return {"message": "error", "objectId": container.id}
+    return {"type": "error", "objectId": container.id}
 
 
 async def stop_container(container: DockerContainer):
     container_details = await get_container_details(container)
     if container_details["State"]["Running"] or container_details["State"]["Paused"]:
         await container.stop()
-        return {"message": "success", "objectId": container_details["Id"]}
+        return {"type": "success", "objectId": container_details["Id"]}
     # already exited
-    return {"message": "error", "objectId": container_details["Id"]}
+    return {"type": "error", "objectId": container_details["Id"]}
 
 
 async def restart_container(container: DockerContainer):
@@ -109,9 +109,9 @@ async def restart_container(container: DockerContainer):
     container_details = await get_container_details(container)
     if container_details["State"]["Running"] or container_details["State"]["Paused"]:
         await container.restart()
-        return {"message": "success", "objectId": container_details["Id"]}
+        return {"type": "success", "objectId": container_details["Id"]}
     # not running or paused to restart
-    return {"message": "error", "objectId": container_details["Id"]}
+    return {"type": "error", "objectId": container_details["Id"]}
 
 
 async def kill_container(container: DockerContainer):
@@ -119,9 +119,9 @@ async def kill_container(container: DockerContainer):
     container_details = await get_container_details(container)
     if container_details["State"]["Running"] or container_details["State"]["Paused"]:
         await container.kill()
-        return {"message": "success", "objectId": container_details["Id"]}
+        return {"type": "success", "objectId": container_details["Id"]}
     # not running or paused to be killed
-    return {"message": "error", "objectId": container_details["Id"]}
+    return {"type": "error", "objectId": container_details["Id"]}
 
 
 async def delete_container(container: DockerContainer):
@@ -142,15 +142,27 @@ async def delete_container(container: DockerContainer):
         logging.info(f"Deleted container: {container}")
     except DockerError as e:
         # already deleted
-        return {"message": "error", "objectId": container_details["Id"]}
-    return {"message": "success", "objectId": container_details["Id"]}
+        return {"type": "error", "objectId": container_details["Id"]}
+    return {"type": "success", "objectId": container_details["Id"]}
 
 
 async def delete_image(id: str):
     # delete any images forcefully
     try:
-        await DOCKER_IMAGES.delete(name=id)
+        await DOCKER_IMAGES_INTERFACE.delete(name=id)
     except DockerError as e:
         # already deleted
-        return {"message": "error", "objectId": id[:12]}
-    return {"message": "success", "objectId": id[:12]}
+        return {"type": "error", "objectId": id}
+    return {"type": "success", "objectId": id}
+
+
+async def pull_image(from_image: str, tag: str):
+    # pull the image
+    try:
+        # if tag is an empty string, use latest
+        tag = tag if tag else "latest"
+        res = await DOCKER_IMAGES_INTERFACE.pull(from_image=from_image, tag=tag)
+        logging.info(res)
+    except DockerError as e:
+        return {"type": "error", "statusCode": e.status, "message": e.message}
+    return {"type": "success", "message": res[-1]}

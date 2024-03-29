@@ -118,7 +118,7 @@
                                     <div class="modal-dialog">
                                         <div class="modal-content">
                                             <div class="modal-header">
-                                                <h5 class="modal-title" id="createContainerModalLabel">Docker System
+                                                <h5 class="modal-title" id="pruneModalLabel">Docker System
                                                     Prune</h5>
                                                 <button type="button" class="btn-close" data-bs-dismiss="modal"
                                                     aria-label="Close"></button>
@@ -199,14 +199,42 @@
                             <div class="collapse" id="imageDetails">
                                 <main style="width: 100% !important; padding-top: 20px;">
                                     <div class="d-flex justify-content-between mb-3 button-box">
-                                        <button type="button" class="btn btn-primary btn-sm mr-2"
-                                            id="create-img-btn">
-                                            <i class="fa-solid fa-plus"></i> Create
+                                        <button type="button" class="btn btn-primary btn-sm mr-2" data-bs-toggle="modal"
+                                            data-bs-target="#pullModal" id="pull-modal-btn">
+                                            <i class="fa-solid fa-download" id="pull-icon"></i>
+                                            Pull
                                         </button>
                                         <button type="button" class="btn btn-danger btn-sm mr-2 disabled"
                                             id="delete-img-btn"><i class="bi bi-trash-fill"></i> Delete</button>
                                     </div>
                                 </main>
+
+                                <!-- Pull modal -->
+                                <div class="modal fade" id="pullModal" tabindex="-1" aria-labelledby="pullModal"
+                                    aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="pullImageModalLabel">Pull Image</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                    aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="input-group">
+                                                    <input type="text" id="image-name" aria-label="image"
+                                                        class="form-control required" placeholder="image name" required>
+                                                    <span class="input-group-text">:</span>
+                                                    <input type="text" id="tag" aria-label="tag" class="form-control"
+                                                        placeholder="latest" aria-describedby="imageHelp">
+                                                    <button type="submit" class="btn btn-success" id="pull-img-btn">
+                                                        Pull</button>
+                                                </div>
+                                                <div id="pull-validation">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
 
                                 <!-- table of images -->
                                 <section class="flex-grow-1">
@@ -257,7 +285,7 @@
             </div>
 
             <!-- Messages -->
-            <section class="toast-container position-fixed bottom-0 end-0 p-3" id="toast-container"></section>
+            <section class="toast-container position-fixed bottom-0 end-0 p-3 w-25" id="toast-container"></section>
     </main>
 
     <!-- Bootstrap JS -->

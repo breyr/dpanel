@@ -32,7 +32,7 @@ function getPortBindings(portBindings) {
   return result;
 }
 
-function toggleSpinnerAndButton(objectType, actionBtnId, showCheckbox = true) {
+function toggleSpinnerAndButtonRow(objectType, actionBtnId, showCheckbox = true) {
   // objectType is container, image, or volume
   const checkboxes = $(`.tr-${objectType}-checkbox:checked`);
   checkboxes.each(function () {
@@ -55,7 +55,7 @@ function performActionContainer(action, actionBtnId) {
   // disable clicked action button
   $('#' + actionBtnId).prop('disabled', true);
 
-  toggleSpinnerAndButton('container', actionBtnId, false);
+  toggleSpinnerAndButtonRow('container', actionBtnId, false);
 
   $.ajax({
     url: `http://localhost:5002/api/containers/${action}`,
@@ -63,37 +63,81 @@ function performActionContainer(action, actionBtnId) {
     contentType: 'application/json',
     data: JSON.stringify({ 'ids': checkedIds }),
     success: function (result) {
-      toggleSpinnerAndButton('container', actionBtnId);
+      toggleSpinnerAndButtonRow('container', actionBtnId);
     },
     error: function (result) {
-      toggleSpinnerAndButton('container', actionBtnId);
+      toggleSpinnerAndButtonRow('container', actionBtnId);
     }
   });
 }
 
 function performActionImage(action, actionBtnId) {
-  const checkedIds = $('.tr-image-checkbox:checked').map(function () {
-    return this.value;
-  }).get();
-  // hide checkboxes
-  $('.tr-image-checkbox:checked').css('display', 'none');
-  // disable clicked action button
-  $('#' + actionBtnId).prop('disabled', true);
 
-  toggleSpinnerAndButton('image', actionBtnId, false);
-
-  console.log(checkedIds);
-
-  $.ajax({
-    url: `http://localhost:5002/api/images/${action}`,
-    type: 'POST',
-    contentType: 'application/json',
-    data: JSON.stringify({ 'ids': checkedIds }),
-    success: function (result) {
-      toggleSpinnerAndButton('image', actionBtnId);
-    },
-    error: function (result) {
-      toggleSpinnerAndButton('image', actionBtnId);
-    }
-  });
+  let checkedIds, image, tag;
+  switch (action) {
+    case 'delete':
+      // get checked rows for images
+      checkedIds = $('.tr-image-checkbox:checked').map(function () {
+        return this.value;
+      }).get();
+      // hide checkboxes for image rows
+      $('.tr-image-checkbox:checked').css('display', 'none');
+      // disable clicked action button
+      $('#' + actionBtnId).prop('disabled', true);
+      // shows spinners for image rows
+      toggleSpinnerAndButtonRow('image', actionBtnId, false);
+      $.ajax({
+        url: `http://localhost:5002/api/images/${action}`,
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ 'ids': checkedIds }),
+        success: function (result) {
+          toggleSpinnerAndButtonRow('image', actionBtnId);
+        },
+        error: function (result) {
+          toggleSpinnerAndButtonRow('image', actionBtnId);
+        }
+      });
+      break;
+    case 'pull':
+      // get image input
+      image = $('#image-name').val();
+      // show error if image is ''
+      if (image === '') {
+        $('#pull-validation').append($("<small class='text-danger'></small").text("Please specify an image"));
+      } else {
+        // perform ajax call
+        // get tag input
+        tag = $('#tag').val() === '' ? 'latest' : $('#tag').val();
+        // create random id
+        // toggle icon and show spinner inside pull button
+        const uniqueId = 'pull' + Date.now();
+        $alert = `<p class='text-warning mt-2' id='${uniqueId}'><i class="bi bi-info-circle"></i> Pulling ${image}:${tag}</p>`;
+        $('#pull-validation').append($alert);
+        $.ajax({
+          url: `http://localhost:5002/api/images/${action}`,
+          type: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({ 'image': image, 'tag': tag }),
+          success: function (result) {
+            // clear inputs after success only
+            $('#image-name').val('');
+            $('#tag').val('');
+            $(`#${uniqueId}`).removeClass('text-warning').addClass('text-success');
+            $(`#${uniqueId}`).html(`<i class="fa-regular fa-circle-check"></i> Successfully pulled ${image}:${tag}`);
+            setTimeout(function () {
+              $(`#${uniqueId}`).remove();
+            }, 10000);  // 5000 milliseconds = 5 seconds
+          },
+          error: function (result) {
+            $(`#${uniqueId}`).removeClass('text-warning').addClass('text-danger');
+            $(`#${uniqueId}`).html(`<i class="fa-regular fa-circle-xmark"></i> Failed to pull ${image}:${tag} (double check the image name)`);
+            setTimeout(function () {
+              $(`#${uniqueId}`).remove();
+            }, 10000);  // 5000 milliseconds = 5 seconds
+          }
+        });
+      }
+      break;
+  }
 }
