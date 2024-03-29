@@ -33,5 +33,5 @@ def webhook():
     return 'Unsupported event', 400
 
 if __name__ == '__main__':
-  port = int(os.getenv('PORT', 1470))  # Use environment variable for port
+  port = int(os.getenv('PORT', 1470))
   app.run(host='0.0.0.0', port=port)
