@@ -20,6 +20,7 @@ from helpers import (
     resume_container,
     delete_container,
     delete_image,
+    pull_image,
     ObjectType,
 )
 
@@ -81,11 +82,15 @@ async def perform_action(
 ):
     try:
         data = await req.json()
-        ids = data["ids"]
+        ids = data.get("ids", [])
+        from_image = data.get("image", "")
+        tag = data.get("tag", "")
         error_ids = []
         success_ids = []
 
-        async def perform_action_and_handle_error(id: str):
+        async def perform_action_and_handle_error(
+            id: str, from_image: str = None, tag: str = None
+        ):
             # logging.info(f"Performing action for container with id: {id}")
             if object_type == ObjectType.CONTAINER:
                 container = await ASYNC_DOCKER_CLIENT.containers.get(id)
@@ -93,7 +98,12 @@ async def perform_action(
                 res = await action(container)
                 # logging.info(f"finished action for {id}")
             elif object_type == ObjectType.IMAGE:
-                res = await action(id)
+                if id:
+                    # for deletion
+                    res = await action(id)
+                if from_image:
+                    # for pulling
+                    res = await action(from_image=from_image, tag=tag)
             if res["message"] == "error":
                 # race condition?
                 # substring 0-12 for short id
@@ -102,7 +112,11 @@ async def perform_action(
                 success_ids.append(res["objectId"][:12])
 
         # create list of taska and use asyncio.gather to run them concurrently
-        tasks = [perform_action_and_handle_error(id) for id in ids]
+        if ids:
+            tasks = [perform_action_and_handle_error(id) for id in ids]
+        else:
+            # for actions that don't require an id
+            tasks = [perform_action_and_handle_error(from_image=from_image, tag=tag)]
         # the * is list unpacking
         await asyncio.gather(*tasks)
 
@@ -270,6 +284,17 @@ async def delete_images(req: Request):
     return await perform_action(
         req,
         delete_image,
+        ObjectType.IMAGE,
+        success_msg="Images deleted",
+        error_msg="Images already delted",
+    )
+
+
+@app.post("/api/images/pull")
+async def pull_images(req: Request):
+    return await perform_action(
+        req,
+        pull_image,
         ObjectType.IMAGE,
         success_msg="Images deleted",
         error_msg="Images already delted",

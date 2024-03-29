@@ -32,7 +32,7 @@ function getPortBindings(portBindings) {
   return result;
 }
 
-function toggleSpinnerAndButton(objectType, actionBtnId, showCheckbox = true) {
+function toggleSpinnerAndButtonRow(objectType, actionBtnId, showCheckbox = true) {
   // objectType is container, image, or volume
   const checkboxes = $(`.tr-${objectType}-checkbox:checked`);
   checkboxes.each(function () {
@@ -55,7 +55,7 @@ function performActionContainer(action, actionBtnId) {
   // disable clicked action button
   $('#' + actionBtnId).prop('disabled', true);
 
-  toggleSpinnerAndButton('container', actionBtnId, false);
+  toggleSpinnerAndButtonRow('container', actionBtnId, false);
 
   $.ajax({
     url: `http://localhost:5002/api/containers/${action}`,
@@ -63,15 +63,17 @@ function performActionContainer(action, actionBtnId) {
     contentType: 'application/json',
     data: JSON.stringify({ 'ids': checkedIds }),
     success: function (result) {
-      toggleSpinnerAndButton('container', actionBtnId);
+      toggleSpinnerAndButtonRow('container', actionBtnId);
     },
     error: function (result) {
-      toggleSpinnerAndButton('container', actionBtnId);
+      toggleSpinnerAndButtonRow('container', actionBtnId);
     }
   });
 }
 
 function performActionImage(action, actionBtnId) {
+  // const image = $('#image-name').val();
+  // const tag = $('#tag').val() === '' ? 'latest' : $('#tag').val();
   const checkedIds = $('.tr-image-checkbox:checked').map(function () {
     return this.value;
   }).get();
@@ -80,9 +82,7 @@ function performActionImage(action, actionBtnId) {
   // disable clicked action button
   $('#' + actionBtnId).prop('disabled', true);
 
-  toggleSpinnerAndButton('image', actionBtnId, false);
-
-  console.log(checkedIds);
+  toggleSpinnerAndButtonRow('image', actionBtnId, false);
 
   $.ajax({
     url: `http://localhost:5002/api/images/${action}`,
@@ -90,10 +90,10 @@ function performActionImage(action, actionBtnId) {
     contentType: 'application/json',
     data: JSON.stringify({ 'ids': checkedIds }),
     success: function (result) {
-      toggleSpinnerAndButton('image', actionBtnId);
+      toggleSpinnerAndButtonRow('image', actionBtnId);
     },
     error: function (result) {
-      toggleSpinnerAndButton('image', actionBtnId);
+      toggleSpinnerAndButtonRow('image', actionBtnId);
     }
   });
 }

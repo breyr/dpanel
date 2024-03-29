@@ -9,7 +9,7 @@ $(document).ready(function () {
         });
     });
     // add actions to all the image section buttons
-    ['delete'].forEach(action => {
+    ['delete', 'pull'].forEach(action => {
         $(`#${action}-img-btn`).click(function () {
             performActionImage(action, `${action}-img-btn`);
         });

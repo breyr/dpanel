@@ -25,7 +25,7 @@ class ObjectType(enum.Enum):
 
 
 ASYNC_DOCKER_CLIENT = aiodocker.Docker()
-DOCKER_IMAGES = aiodocker.docker.DockerImages(ASYNC_DOCKER_CLIENT)
+DOCKER_IMAGES_INTERFACE = aiodocker.docker.DockerImages(ASYNC_DOCKER_CLIENT)
 
 # "State":{
 #       "Status":"exited",
@@ -149,8 +149,18 @@ async def delete_container(container: DockerContainer):
 async def delete_image(id: str):
     # delete any images forcefully
     try:
-        await DOCKER_IMAGES.delete(name=id)
+        await DOCKER_IMAGES_INTERFACE.delete(name=id)
     except DockerError as e:
         # already deleted
         return {"message": "error", "objectId": id[:12]}
     return {"message": "success", "objectId": id[:12]}
+
+
+async def pull_image(from_image: str, tag=None):
+    # pull the image
+    try:
+        res = await DOCKER_IMAGES_INTERFACE.pull(from_image=from_image, tag=tag)
+        logging.info(f"Pull image result: {res}")
+    except DockerError as e:
+        return {"message": "error", "objectId": "random id for testing image pulling"}
+    return {"message": "success", "objectId": "random id for testing image pulling"}
