@@ -17,16 +17,20 @@ def webhook():
       # Stopping and removing existing containers, networks, and volumes
       subprocess.check_call(["docker-compose", "down", "--volumes", "--remove-orphans"])
 
-      # Pull the latest changes from GitHub
-      subprocess.check_call(["git", "pull", "origin", "--force"])
+      # Add the original repository as a remote named 'upstream'
+      subprocess.check_call(["git", "remote", "add", "upstream", "https://github.com/breyr/dpanel.git"])
+
+      # Fetch the branches and their commits from the 'upstream'
+      subprocess.check_call(["git", "fetch", "upstream"])
+
+      # Merge the changes from the 'upstream/master' into your local 'master' branch
+      subprocess.check_call(["git", "merge", "upstream/master"])
 
       # Run docker-compose
       subprocess.check_call(["docker-compose", "up", "--build", "-d"])
     except subprocess.CalledProcessError as e:
       logging.error(f"Subprocess failed with error {e}")
       return 'Update and deployment failed', 500
-
-    return 'Update and deployment completed successfully', 200
   elif event == 'ping':
     return 'Ping event received successfully', 200
   else:
