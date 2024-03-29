@@ -24,7 +24,7 @@ def webhook():
       subprocess.check_call(["git", "fetch", "upstream"])
 
       # Merge the changes from the 'upstream/master' into your local 'master' branch
-      subprocess.check_call(["git", "merge", "upstream/master"])
+      subprocess.check_call(["git", "merge", "upstream/main"])
 
       # Run docker-compose
       subprocess.check_call(["docker-compose", "up", "--build", "-d"])
