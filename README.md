@@ -29,5 +29,3 @@ Ports used by each service:
 - Nginx: 3000
 - FastAPI: 5002
 - Reddis: 6379
-
-test7
