@@ -270,7 +270,7 @@ $(document).ready(function () {
     var containerStatsSource = null;
     function initContainerStatsES() {
         if (containerStatsSource == null || containerStatsSource.readyState == 2) {
-            containerStatsSource = new EventSource('http://localhost:5002/api/streams/containermetrics');
+            containerStatsSource = new EventSource('http://localhost:5002/api/streams/containerlist');//how come /containermetrics doesnt have the id
             containerStatsSource.onerror = function (event) {
                 if (containerStatsSource.readyState == 2) {
                     // retry connection to ES
