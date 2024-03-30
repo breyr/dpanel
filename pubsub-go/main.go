@@ -158,8 +158,14 @@ func publishContainerStats(dockerClient *client.Client) {
 		var wg sync.WaitGroup
 		wg.Add(len(containers))
 
-		var containerStats []map[string]interface{}
+		var mu sync.Mutex
+		containerStats := make(map[string]map[string]interface{})
 		for _, container := range containers {
+			if container.State == "exited" {
+				log.Printf("Skipping stats for container %s because it has exited", container.ID)
+				continue
+			}
+
 			go func(container types.Container) {
 				defer wg.Done()
 
@@ -168,6 +174,7 @@ func publishContainerStats(dockerClient *client.Client) {
 					log.Printf("Failed to get stats for container %s: %v\n", container.ID, err)
 					return
 				}
+				defer stats.Body.Close()
 
 				var statsData map[string]interface{}
 				err = json.NewDecoder(stats.Body).Decode(&statsData)
@@ -176,25 +183,9 @@ func publishContainerStats(dockerClient *client.Client) {
 					return
 				}
 
-				cpuStats := statsData["cpu_stats"].(map[string]interface{})
-				cpuUsage := cpuStats["cpu_usage"].(map[string]interface{})
-				systemCpuUsage := cpuStats["system_cpu_usage"].(float64)
-				cpuPercent := (cpuUsage["total_usage"].(float64) / systemCpuUsage) * 100
-
-				memoryStats := statsData["memory_stats"].(map[string]interface{})
-				memoryUsage := memoryStats["usage"].(float64)
-				memoryLimit := memoryStats["limit"].(float64)
-				memoryPercent := (memoryUsage / memoryLimit) * 100
-
-				specificStats := map[string]interface{}{
-					"container_id":   container.ID,
-					"cpu_percent":    cpuPercent,
-					"memory_usage":   memoryUsage,
-					"memory_limit":   memoryLimit,
-					"memory_percent": memoryPercent,
-				}
-
-				containerStats = append(containerStats, specificStats)
+				mu.Lock()
+				containerStats[container.ID] = statsData
+				mu.Unlock()
 			}(container)
 		}
 
@@ -209,7 +200,6 @@ func publishContainerStats(dockerClient *client.Client) {
 		if err != nil {
 			return
 		}
-
 		time.Sleep(time.Second)
 	}
 }
