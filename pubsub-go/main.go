@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"log"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -147,60 +147,91 @@ func publishImagesList(dockerClient *client.Client) {
 	}
 }
 
-func publishContainerStats(dockerClient *client.Client) {
+// chan<- means sending
+func collectContainerStats(ctx context.Context, dockerClient *client.Client, container types.Container, statsCh chan<- types.StatsJSON) {
+	stream := true
+	stats, err := dockerClient.ContainerStats(ctx, container.ID, stream)
+	if err != nil {
+		log.Printf("Error getting stats for container %s: %v", container.ID, err)
+		return
+	}
+	defer stats.Body.Close()
+
 	for {
-		containers, err := dockerClient.ContainerList(ctx, container.ListOptions{All: true})
-		if err != nil {
-			log.Printf("Failed to list containers: %v\n", err)
-			continue
-		}
-
-		var wg sync.WaitGroup
-		wg.Add(len(containers))
-
-		var mu sync.Mutex
-		containerStats := make(map[string]map[string]interface{})
-		for _, container := range containers {
-			if container.State == "exited" {
-				log.Printf("Skipping stats for container %s because it has exited", container.ID)
-				continue
+		select {
+		case <-ctx.Done():
+			// Context has been cancelled, stop collecting stats
+			return
+		default:
+			var containerStats types.StatsJSON
+			if err := json.NewDecoder(stats.Body).Decode(&containerStats); err != nil {
+				if err == io.EOF {
+					// Stream is closed, stop collecting stats
+					log.Printf("Stats stream for container %s closed, stopping stats collection", container.ID)
+					return
+				}
+				log.Printf("Error decoding stats for container %s: %v", container.ID, err)
+				return
 			}
 
-			go func(container types.Container) {
-				defer wg.Done()
-
-				stats, err := dockerClient.ContainerStats(ctx, container.ID, false)
-				if err != nil {
-					log.Printf("Failed to get stats for container %s: %v\n", container.ID, err)
-					return
-				}
-				defer stats.Body.Close()
-
-				var statsData map[string]interface{}
-				err = json.NewDecoder(stats.Body).Decode(&statsData)
-				if err != nil {
-					log.Printf("Failed to decode stats for container %s: %v\n", container.ID, err)
-					return
-				}
-
-				mu.Lock()
-				containerStats[container.ID] = statsData
-				mu.Unlock()
-			}(container)
+			statsCh <- containerStats
 		}
+	}
+}
 
-		wg.Wait()
+func monitorContainers(dockerClient *client.Client, statsCh chan<- types.StatsJSON) {
+	containerContexts := make(map[string]context.CancelFunc)
 
-		containerStatsJSON, err := json.Marshal(containerStats)
+	for {
+		// get containers
+		containers, err := dockerClient.ContainerList(context.Background(), container.ListOptions{All: true})
 		if err != nil {
-			log.Printf("Failed to marshal stats to JSON for containerStats")
-		}
-
-		err = redisClient.Publish("container_metrics", containerStatsJSON).Err()
-		if err != nil {
+			log.Printf("Failed getting list of containers %v\n", err)
 			return
 		}
+
+		// Create a set of container IDs
+		containerIDSet := make(map[string]struct{})
+		for _, container := range containers {
+			containerIDSet[container.ID] = struct{}{}
+		}
+
+		for _, container := range containers {
+			if _, exists := containerContexts[container.ID]; !exists {
+				// New container, start a goroutine to collect its stats
+				ctx, cancel := context.WithCancel(context.Background())
+				containerContexts[container.ID] = cancel
+				go collectContainerStats(ctx, dockerClient, container, statsCh)
+			}
+		}
+
+		// Check for deleted containers
+		for id, cancel := range containerContexts {
+			if _, found := containerIDSet[id]; !found {
+				// Container has been deleted, cancel its context
+				log.Printf("Canceling context for %s", id)
+				cancel()
+				delete(containerContexts, id)
+			}
+		}
+
 		time.Sleep(time.Second)
+	}
+}
+
+// <-chan means recieving
+func publishContainerStats(redisClient *redis.Client, statsCh <-chan types.StatsJSON) {
+	for stats := range statsCh {
+		statsJSON, err := json.Marshal(stats)
+		if err != nil {
+			log.Printf("Failed to marshal container stats to JSON: %v", err)
+			return
+		}
+
+		err = redisClient.Publish("container_metrics", statsJSON).Err()
+		if err != nil {
+			log.Printf("Error publishing container stats to reids: %v", err)
+		}
 	}
 }
 
@@ -209,8 +240,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create Docker client: %v\n", err)
 	}
+	defer dockerClient.Close()
 
-	go publishContainerStats(dockerClient)
+	statsChan := make(chan types.StatsJSON)
+	go publishContainerStats(redisClient, statsChan)
+	go monitorContainers(dockerClient, statsChan)
 	go publishHomepageData(dockerClient)
 	go publishImagesList(dockerClient)
 
