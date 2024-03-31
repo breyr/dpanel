@@ -6,10 +6,12 @@ from fastapi.middleware.cors import CORSMiddleware
 import aioredis
 from aioredis import Redis
 from aiodocker.exceptions import DockerError
-from typing import Callable
+from typing import Callable, List
 import asyncio
 from helpers import (
     ASYNC_DOCKER_CLIENT,
+    SYNC_DOCKER_CLIENT,
+    convert_from_bytes,
     pause_container,
     subscribe_to_channel,
     publish_message_data,
@@ -192,20 +194,54 @@ def info(container_id: str):
 
 @app.post("/api/system/prune")
 async def prune_system(req: Request):
+    data = await req.json()
+    objects_to_prune: List[str] = data["objectsToPrune"]
+    logging.info(f"Objects: {objects_to_prune}")
     try:
-        # TODO: ASYNC call, prune doesnt exist in aiodocker
-        pruned_containers = ASYNC_DOCKER_CLIENT.containers.prune()
-        # client.images.prune()
-        # client.networks.prune()
-        # client.volumes.prune()
-        containers_deleted = pruned_containers.get("ContainersDeleted")
-        num_deleted = len(containers_deleted) if containers_deleted is not None else 0
-        space_reclaimed = pruned_containers.get("SpaceReclaimed", 0)
-        await publish_message_data(
-            f"System pruned successfully: {num_deleted} containers deleted, {space_reclaimed} space reclaimed",
-            "Success",
-            redis=redis,
-        )
+        res = {}
+        for obj in objects_to_prune:
+            if obj == "containers":
+                pruned_containers = SYNC_DOCKER_CLIENT.containers.prune()
+                res["Containers"] = pruned_containers
+            elif obj == "images":
+                pruned_images = SYNC_DOCKER_CLIENT.images.prune()
+                res["Images"] = pruned_images
+            elif obj == "volumes":
+                pruned_volumes = SYNC_DOCKER_CLIENT.volumes.prune()
+                res["Volumes"] = pruned_volumes
+            elif obj == "networks":
+                # Add your code for "Networks" here
+                pruned_networks = SYNC_DOCKER_CLIENT.networks.prune()
+                res["Networks"] = pruned_networks
+                break
+
+        # res['containers'] -> list or None ['ContainersDeleted], ['SpaceReclaimed']
+        # res['images'] -> list or None ['ImagesDeleted'], ['SpaceReclaimed']
+        # res['volumes'] -> list or None ['VolumesDelete'], ['SpaceReclaimed']
+        # res['networks'] -> list or None ['NetworksDeleted']
+        async def schedule_messages(object_type: str, res: dict, redis):
+            # get number of objects deleted
+            logging.info(f"Scheduling message for object: {object_type} after pruning")
+            num_deleted = (
+                0
+                if res[object_type][f"{object_type}Deleted"] is None
+                else len(res[object_type][f"{object_type}Deleted"])
+            )
+            space_reclaimed = (
+                0
+                if object_type == "Networks"
+                else convert_from_bytes(res[object_type]["SpaceReclaimed"])
+            )
+            await publish_message_data(
+                f"{object_type} pruned successfully: {num_deleted} deleted, {space_reclaimed} space reclaimed",
+                "Success",
+                redis=redis,
+            )
+
+        # schedules message sending based on keys in result dict from pruning
+        tasks = [schedule_messages(key, res, redis) for key in res.keys()]
+        await asyncio.gather(*tasks)
+
         return JSONResponse(
             content={"message": "System prune successfull"}, status_code=200
         )
