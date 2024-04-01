@@ -316,7 +316,7 @@ $(document).ready(function () {
                 }
 
                 // Define the attributes to be updated
-                const attributes = ['Name', 'CpuPercent', 'MemUsage', 'MemLimit', 'MemPercent'];
+                const attributes = ['Names', 'CpuPercent', 'MemUsage', 'MemLimit', 'MemPercent'];
                 attributes.forEach(attr => {
                     // If the attribute has changed
                     if (previousStateStats[container.ID]?.[attr] !== container[attr]) {
@@ -325,7 +325,7 @@ $(document).ready(function () {
                                 $(`#name-${container.ID}`).text(container.Names[0].substring(1));
                                 break;
                             case 'CpuPercent':
-                                $(`#cpu-percent-${container.ID}`).html(`<span>${container.cpuPercent}</span>`);
+                                $(`#cpu-percent-${container.ID}`).html(`<span>${container.cpu_percent}</span>`);
                                 break;
                             case 'MemUsage':
                                 $(`#memory-usage-${container.ID}`).html(`<span>${container.memoryUsage}</span>`);
