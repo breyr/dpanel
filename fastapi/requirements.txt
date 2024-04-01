@@ -4,5 +4,6 @@ uvicorn>=0.15.0,<0.16.0
 aiodocker
 aioredis
 sse_starlette
+docker
 python-multipart
 aiofiles
