@@ -172,20 +172,10 @@ async def perform_action(
 @app.get("/api/streams/composefiles")
 async def list_files():
     async def event_stream():
-        # local "cache" for previous state of files
-        last_files = None
-        sleep_time = 1  # initial sleep time
         while True:
             files = os.listdir("/composefiles")
-            if files != last_files:
-                yield f"{json.dumps({'files': files})}\n\n"
-                last_files = files  # update states
-                sleep_time = 1  # reset sleep
-            else:
-                yield "\n\n"  # heartbest to keep connection alive
-                # double the sleep time up to a max of a minute
-                sleep_time = min(sleep_time * 2, 60)
-            await asyncio.sleep(sleep_time)
+            yield f"{json.dumps({'files': files})}\n\n"
+            await asyncio.sleep(1)
 
     return EventSourceResponse(event_stream())
 
