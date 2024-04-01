@@ -6,10 +6,12 @@ from fastapi.middleware.cors import CORSMiddleware
 import aioredis
 from aioredis import Redis
 from aiodocker.exceptions import DockerError
-from typing import Callable
+from typing import Callable, List
 import asyncio
 from helpers import (
     ASYNC_DOCKER_CLIENT,
+    SYNC_DOCKER_CLIENT,
+    convert_from_bytes,
     pause_container,
     subscribe_to_channel,
     publish_message_data,
@@ -20,6 +22,7 @@ from helpers import (
     resume_container,
     delete_container,
     delete_image,
+    pull_image,
     ObjectType,
     get_container_stats,
 )
@@ -82,59 +85,84 @@ async def perform_action(
 ):
     try:
         data = await req.json()
-        ids = data["ids"]
-        error_ids = []
-        success_ids = []
+        ids = data.get("ids", [])
+        from_image = data.get("image", "")
+        tag = data.get("tag", "")
+        error_ids_msgs = []
+        success_ids_msgs = []
+        logging.info(
+            f"\nRequest Data: {data}\nIds: {ids}\nImage to pull: {from_image}\nImage tag: {tag}\n"
+        )
 
-        async def perform_action_and_handle_error(id: str):
-            # logging.info(f"Performing action for container with id: {id}")
+        async def perform_action_and_handle_error(
+            id: str, publish_image: str = None, tag: str = None
+        ):
             if object_type == ObjectType.CONTAINER:
                 container = await ASYNC_DOCKER_CLIENT.containers.get(id)
-                # logging.info(f"{container} container for {id}")
                 res = await action(container)
-                # logging.info(f"finished action for {id}")
             elif object_type == ObjectType.IMAGE:
-                res = await action(id)
-            if res["message"] == "error":
-                # race condition?
-                # substring 0-12 for short id
-                error_ids.append(res["objectId"][:12])
-            elif res["message"] == "success":
-                success_ids.append(res["objectId"][:12])
+                # for pulling an image
+                if publish_image:
+                    res = await action(publish_image, tag)
+                else:
+                    # for deleting an image
+                    res = await action(id)
+            return res
 
-        # create list of taska and use asyncio.gather to run them concurrently
-        tasks = [perform_action_and_handle_error(id) for id in ids]
+        tasks = []
+        # create list of tasks and use asyncio.gather to run them concurrently
+        if ids:
+            tasks.extend([perform_action_and_handle_error(id) for id in ids])
+        if from_image:
+            tasks.append(perform_action_and_handle_error(None, from_image, tag))
+
         # the * is list unpacking
-        await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks)
 
-        # no containers had the action performed
-        if len(ids) - len(error_ids) == 0:
-            tasks = [
+        for res in results:
+            if res["type"] == "error":
+                if "statusCode" in res:
+                    # get message from DockerError
+                    error_ids_msgs.append(res["message"])
+                else:
+                    # get short id of object's full id
+                    error_ids_msgs.append(res["objectId"][:12])
+            elif res["type"] == "success":
+                if "message" in res and "status" in res["message"]:
+                    # append result from pulling an image
+                    success_ids_msgs.append(res["message"]["status"])
+                else:
+                    success_ids_msgs.append(res["objectId"][:12])
+
+        publish_tasks = []
+        if success_ids_msgs:
+            publish_tasks.append(
                 publish_message_data(
-                    f"{error_msg} ({len(error_ids)}): {error_ids}",
-                    "Error",
-                    redis=redis,
-                )
-            ]
-        else:
-            tasks = [
-                publish_message_data(
-                    f"{success_msg} ({len(ids) - len(error_ids)}):  {success_ids}",
+                    f"{success_msg} ({len(success_ids_msgs)}):  {success_ids_msgs}",
                     "Success",
                     redis=redis,
                 )
-            ]
-            # publish any error ids
-            if error_ids:
-                tasks.append(
-                    publish_message_data(
-                        f"{error_msg}: {error_ids}", "Error", redis=redis
-                    )
+            )
+
+        if error_ids_msgs:
+            publish_tasks.append(
+                publish_message_data(
+                    f"{error_msg}: {error_ids_msgs}", "Error", redis=redis
                 )
-        await asyncio.gather(*tasks)
-        return JSONResponse(content={"message": f"{success_msg}"}, status_code=200)
+            )
+
+        await asyncio.gather(*publish_tasks)
+
+        if error_ids_msgs:
+            return JSONResponse(
+                content={"message": f"{error_msg}: {error_ids_msgs}"}, status_code=400
+            )
+        else:
+            return JSONResponse(content={"message": f"{success_msg}"}, status_code=200)
     except Exception as e:
-        await publish_message_data("API error, please try again", "Error", redis=redis)
+        await publish_message_data(
+            f"API error, please try again: {e}", "Error", redis=redis
+        )
         return JSONResponse(content={"message": "API error"}, status_code=400)
 
 
@@ -172,20 +200,54 @@ def info(container_id: str):
 
 @app.post("/api/system/prune")
 async def prune_system(req: Request):
+    data = await req.json()
+    objects_to_prune: List[str] = data["objectsToPrune"]
+    logging.info(f"Objects: {objects_to_prune}")
     try:
-        # TODO: ASYNC call, prune doesnt exist in aiodocker
-        pruned_containers = ASYNC_DOCKER_CLIENT.containers.prune()
-        # client.images.prune()
-        # client.networks.prune()
-        # client.volumes.prune()
-        containers_deleted = pruned_containers.get("ContainersDeleted")
-        num_deleted = len(containers_deleted) if containers_deleted is not None else 0
-        space_reclaimed = pruned_containers.get("SpaceReclaimed", 0)
-        await publish_message_data(
-            f"System pruned successfully: {num_deleted} containers deleted, {space_reclaimed} space reclaimed",
-            "Success",
-            redis=redis,
-        )
+        res = {}
+        for obj in objects_to_prune:
+            if obj == "containers":
+                pruned_containers = SYNC_DOCKER_CLIENT.containers.prune()
+                res["Containers"] = pruned_containers
+            elif obj == "images":
+                pruned_images = SYNC_DOCKER_CLIENT.images.prune()
+                res["Images"] = pruned_images
+            elif obj == "volumes":
+                pruned_volumes = SYNC_DOCKER_CLIENT.volumes.prune()
+                res["Volumes"] = pruned_volumes
+            elif obj == "networks":
+                # Add your code for "Networks" here
+                pruned_networks = SYNC_DOCKER_CLIENT.networks.prune()
+                res["Networks"] = pruned_networks
+                break
+
+        # res['containers'] -> list or None ['ContainersDeleted], ['SpaceReclaimed']
+        # res['images'] -> list or None ['ImagesDeleted'], ['SpaceReclaimed']
+        # res['volumes'] -> list or None ['VolumesDelete'], ['SpaceReclaimed']
+        # res['networks'] -> list or None ['NetworksDeleted']
+        async def schedule_messages(object_type: str, res: dict, redis):
+            # get number of objects deleted
+            logging.info(f"Scheduling message for object: {object_type} after pruning")
+            num_deleted = (
+                0
+                if res[object_type][f"{object_type}Deleted"] is None
+                else len(res[object_type][f"{object_type}Deleted"])
+            )
+            space_reclaimed = (
+                0
+                if object_type == "Networks"
+                else convert_from_bytes(res[object_type]["SpaceReclaimed"])
+            )
+            await publish_message_data(
+                f"{object_type} pruned successfully: {num_deleted} deleted, {space_reclaimed} space reclaimed",
+                "Success",
+                redis=redis,
+            )
+
+        # schedules message sending based on keys in result dict from pruning
+        tasks = [schedule_messages(key, res, redis) for key in res.keys()]
+        await asyncio.gather(*tasks)
+
         return JSONResponse(
             content={"message": "System prune successfull"}, status_code=200
         )
@@ -278,5 +340,16 @@ async def delete_images(req: Request):
         delete_image,
         ObjectType.IMAGE,
         success_msg="Images deleted",
-        error_msg="Images already delted",
+        error_msg="Error, check if containers are running",
+    )
+
+
+@app.post("/api/images/pull")
+async def pull_images(req: Request):
+    return await perform_action(
+        req,
+        pull_image,
+        ObjectType.IMAGE,
+        success_msg="Image pulled",
+        error_msg="Error",
     )

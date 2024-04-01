@@ -2,6 +2,9 @@
 
 $(document).ready(function () {
 
+    // remove pull validation errors div
+    $('#pull-validation-errors').empty();
+
     // Adds actions to all teh container buttons
     ['delete', 'start', 'stop', 'kill', 'restart', 'pause', 'resume'].forEach(action => {
         $(`#btn-${action}`).click(function () {
@@ -9,7 +12,7 @@ $(document).ready(function () {
         });
     });
     // add actions to all the image section buttons
-    ['delete'].forEach(action => {
+    ['delete', 'pull'].forEach(action => {
         $(`#${action}-img-btn`).click(function () {
             performActionImage(action, `${action}-img-btn`);
         });
@@ -367,6 +370,23 @@ $(document).ready(function () {
         closeEventSources();
     });
 
+    // handle prune selecting check boxes
+    $('#all-prune-check').change(function () {
+        if (this.checked) {
+            // Disable individual checkboxes if "All" is checked
+            $('#individual-prune-selects input[type="checkbox"]').each(function () {
+                $(this).prop('disabled', true);
+                $(this).prop('checked', true);
+            });
+        } else {
+            // Enable individual checkboxes if "All" is unchecked
+            $('#individual-prune-selects input[type="checkbox"]').each(function () {
+                $(this).prop('disabled', false);
+                $(this).prop('checked', false);
+            });
+        }
+    });
+
     // handle prune check box
     $('#btncheck1').change(function () {
         $('#confirm-prune').toggleClass('disabled');
@@ -379,15 +399,46 @@ $(document).ready(function () {
         // uncheck box for next opening of modal
         $("#btncheck1").prop('checked', false);
         $("#confirm-prune").toggleClass('disabled');
+        // get data
+        let checkedToPrune = []
+        $('#individual-prune-selects input[type="checkbox"]').each(function () {
+            if ($(this).prop('checked') == true) {
+                checkedToPrune.push($(this).val());
+            }
+        });
+        // close modal
+        $('#pruneModal').modal('hide');
+        // disable prune button
+        $('#prune-btn').addClass('disabled');
+        // hide icon
+        $('#prune-icon').addClass('d-none');
+        // show spinner
+        $('#prune-spinner').toggleClass('d-none');
         $.ajax({
             url: 'http://localhost:5002/api/system/prune',
             type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                'objectsToPrune': checkedToPrune
+            }),
             success: function (result) {
+                // enable prune button
+                $('#prune-btn').removeClass('disabled');
+                // show icon
+                $('#prune-icon').removeClass('d-none');
+                // hide spinner
+                $('#prune-spinner').toggleClass('d-none');
+                // clear checkboxes
+                $('#individual-prune-selects input[type="checkbox"]').each(function () {
+                    $(this).prop('checked', false);
+                    $(this).prop('disabled', false);
+                });
+                $('#all-prune-check').prop('checked', false);
             },
             error: function (result) {
                 console.error(result);
             }
-        })
+        });
     })
 
     // handle select all checkbox change
