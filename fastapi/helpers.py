@@ -3,9 +3,11 @@ from aioredis import Redis
 from fastapi import Request
 import aiodocker
 from aiodocker.exceptions import DockerError
-from aiodocker.docker import DockerContainer, DockerImages
+from aiodocker.docker import DockerContainer
 import time
 import enum
+import docker
+from typing import List
 
 # setup logging for docker container
 import sys
@@ -25,6 +27,7 @@ class ObjectType(enum.Enum):
 
 
 ASYNC_DOCKER_CLIENT = aiodocker.Docker()
+SYNC_DOCKER_CLIENT = docker.from_env()
 DOCKER_IMAGES_INTERFACE = aiodocker.docker.DockerImages(ASYNC_DOCKER_CLIENT)
 
 # "State":{
@@ -40,6 +43,14 @@ DOCKER_IMAGES_INTERFACE = aiodocker.docker.DockerImages(ASYNC_DOCKER_CLIENT)
 #       "StartedAt":"2024-03-26T02:23:41.645905711Z",
 #       "FinishedAt":"2024-03-26T02:23:51.87034755Z"
 #    }
+
+
+def convert_from_bytes(bytes) -> str:
+    size_in_mb = bytes / 1048576
+    size_in_gb = size_in_mb / 1024
+    return (
+        f"{round(size_in_mb, 2)} MB" if size_in_gb < 1 else f"{round(size_in_mb, 2)} GB"
+    )
 
 
 async def subscribe_to_channel(req: Request, chan: str, redis: Redis):
