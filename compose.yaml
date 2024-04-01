@@ -33,6 +33,7 @@ services:
       - 5002:5002
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./composefiles:/composefiles # where compose files are stored on host machine
     restart: on-failure
     depends_on:
       - redis

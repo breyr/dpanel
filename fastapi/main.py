@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, File, UploadFile
 from sse_starlette import EventSourceResponse
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
@@ -8,6 +8,9 @@ from aioredis import Redis
 from aiodocker.exceptions import DockerError
 from typing import Callable
 import asyncio
+import aiofiles
+import os
+import json
 from helpers import (
     ASYNC_DOCKER_CLIENT,
     pause_container,
@@ -166,6 +169,41 @@ async def perform_action(
 # ======== ENDPOINTS =========
 
 
+@app.post("/api/upload/compose")
+async def upload_file(file: UploadFile = File(...)):
+    try:
+        contents = await file.read()
+
+        # Write file to /composefiles directory
+        # wb - write binary, contents will be rewritten
+        async with aiofiles.open(f"/composefiles/{file.filename}", "wb") as out_file:
+            await out_file.write(contents)
+
+        await publish_message_data(f"Uploaded: {file.filename}", "Success", redis=redis)
+        return JSONResponse(
+            content={"message": f"Successfully uploaded {file.filename}"},
+            status_code=200,
+        )
+    except Exception as e:
+        await publish_message_data(
+            f"API error, please try again: {e}", "Error", redis=redis
+        )
+        return JSONResponse(
+            content={"message": "Error processing uploaded file"}, status_code=400
+        )
+
+
+@app.get("/api/streams/composefiles")
+async def list_files():
+    async def event_stream():
+        while True:
+            files = os.listdir("/composefiles")
+            yield f"{json.dumps({'files': files})}\n\n"
+            await asyncio.sleep(1)
+
+    return EventSourceResponse(event_stream())
+
+
 @app.get("/api/streams/containerlist")
 async def container_list(req: Request):
     # passes subscribe_to_channel async generator to consume the messages it yields
@@ -311,3 +349,26 @@ async def pull_images(req: Request):
         success_msg="Image pulled",
         error_msg="Error",
     )
+
+
+@app.post("/api/compose/delete")
+async def delete_compose_file(req: Request):
+    data = await req.json()
+    logging.info(f"File to delete: {data}")
+    file_to_delete = data.get("fileName")
+    try:
+        os.remove(f"/composefiles/{file_to_delete}")
+        await publish_message_data(
+            f"Successfully deleted {file_to_delete}", "Success", redis=redis
+        )
+        return JSONResponse(
+            content={"message": f"Successfully deleted {file_to_delete}"},
+            status_code=200,
+        )
+    except Exception as e:
+        await publish_message_data(
+            f"API error, please try again: {e}", "Error", redis=redis
+        )
+        return JSONResponse(
+            content={"message": f"Error deleting file: {e}"}, status_code=400
+        )

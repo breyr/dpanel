@@ -182,7 +182,6 @@ $(document).ready(function () {
         const imagesTbody = $("#images-tbody");
         imageListSource.onmessage = function (event) {
             const data = JSON.parse(event.data);
-            console.log(data);
             // Created - timestamp
             // Id.split(":")[1].substring(12) - gets short id, otherwise complete hash
             // RepoTags[0] - name of image
@@ -270,12 +269,73 @@ $(document).ready(function () {
     }
     initImageListES();
 
+
+
+    // handle file uploading
+    $('#upload-compose-btn').click(function (e) {
+        e.preventDefault();
+
+        var fileInput = document.querySelector('#fileInput');
+        var file = fileInput.files[0];
+        var formData = new FormData();
+
+        formData.append('file', file);
+
+        $.ajax({
+            url: 'http://localhost:5002/api/upload/compose',
+            type: 'POST',
+            data: formData,
+            processData: false,  // tell jQuery not to process the data
+            contentType: false,  // tell jQuery not to set contentType
+            success: function (data) {
+                // file uploaded
+                // clear file upload input
+                fileInput.value = '';
+            }
+        });
+    });
+
+    // retrieve composefiles eventsource
+    var composeFilesSource = null;
+    let composeFilesState = new Set();
+    function initComposeFilesSource() {
+        if (composeFilesSource == null || composeFilesSource.readyState == 2) {
+            composeFilesSource = new EventSource('http://localhost:5002/api/streams/composefiles');
+            composeFilesSource.onerror = function (event) {
+                if (composeFilesSource.readyState == 2) {
+                    // retry connection to ES
+                    setTimeout(composeFilesSource, 5000);
+                }
+            }
+        }
+        composeFilesSource.onmessage = function (event) {
+            // event.data.files -> list of file names within /composefiles directory
+            const data = JSON.parse(event.data);
+            data.files.forEach(fileName => {
+                if (!composeFilesState.has(fileName)) {
+                    composeFilesState.add(fileName);
+                    const newCard = `<div class="compose-file d-flex justify-content-center align-items-center" id="${fileName}">
+                        <p>${fileName}</p>
+                        <div
+                            class="hover-div d-flex flex-column justify-content-center align-items-center">
+                            <button class="btn btn-primary mb-2" id="run-compose-btn">Run</button>
+                            <button class="btn btn-danger" id="delete-compose-btn">Delete</button>
+                        </div>
+                    </div>`;
+                    $('#compose-files-list').append(newCard);
+                }
+            });
+        };
+    }
+    initComposeFilesSource();
+
     // Function to close EventSource connections
     // close() calls the call_on_close in server and unsubscribes from topic
     function closeEventSources() {
         containerListSource.close();
         messagesSource.close();
         imageListSource.close();
+        composeFilesSource.close();
     }
 
     // Close connections when the page is refreshed or closed

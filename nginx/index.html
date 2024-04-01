@@ -17,6 +17,8 @@
     <link rel="stylesheet" href="./static/css/styles.css">
     <!-- Font Awesome -->
     <script src="https://kit.fontawesome.com/4137f8921b.js" crossorigin="anonymous"></script>
+    <!-- dropzone -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.css" rel="stylesheet">
 </head>
 
 <body>
@@ -181,7 +183,7 @@
                 </div>
             </div>
 
-            <!-- IMAGES AND VOLUMES -->
+            <!-- IMAGES AND COMPOSE -->
             <div class="container-fluid" style="padding: 0px !important;">
                 <div class="row">
 
@@ -263,20 +265,51 @@
                         </div>
                     </div>
 
-                    <!-- Volumes block -->
+                    <!-- Compose block -->
                     <div class="col-md-6">
                         <div class="p-3 my-3 bg-light rounded shadow" style="margin-top: 0px !important;">
                             <div class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse"
-                                data-bs-target="#volumeDetails" aria-expanded="false" aria-controls="volumeDetails">
+                                data-bs-target="#composeDetails" aria-expanded="false" aria-controls="composeDetails">
                                 <div>
-                                    <i class="bi bi-hdd-stack me-2"></i> <!-- Changed icon -->
-                                    <span class="page-title">Volumes</span>
+                                    <i class="bi bi-vector-pen"></i>
+                                    <span class="page-title">Compose</span>
                                 </div>
                                 <i class="bi bi-chevron-down"></i>
                             </div>
-                            <div class="collapse" id="volumeDetails">
+                            <div class="collapse" id="composeDetails">
                                 <!-- Your content for the Volumes block goes here -->
-                                hello world
+                                <div class="mt-2">
+                                    <button class="btn btn-secondary" data-bs-toggle="modal"
+                                        data-bs-target="#composeModal">
+                                        <i class="bi bi-file-earmark-arrow-up"></i>
+                                        Upload Compose File
+                                    </button>
+                                    <section id="compose-files-list" class="d-flex flex-wrap">
+                                    </section>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- compose modal -->
+                    <div class="modal" id="composeModal" tabindex="-1" aria-labelledby="composeModalLabel"
+                        aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Upload Compose File</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="modal-body">
+                                        <form id="uploadComposeForm" enctype="multipart/form-data">
+                                            <input type="file" name="fileInput" id="fileInput" accept=".yaml, .yml">
+                                            <br>
+                                            <button class="btn btn-secondary" id="upload-compose-btn">Upload</button>
+                                        </form>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -298,6 +331,8 @@
     <!-- Custom JS -->
     <script src="./static/js/lib.js"></script>
     <script src="./static/js/actions.js"></script>
+    <!-- dropzone -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.js"></script>
     <!-- AJAX Imports -->
     <script id="js-imports"></script>
 </body>
