@@ -169,30 +169,6 @@ async def perform_action(
 # ======== ENDPOINTS =========
 
 
-@app.post("/api/upload/compose")
-async def upload_file(file: UploadFile = File(...)):
-    try:
-        contents = await file.read()
-
-        # Write file to /composefiles directory
-        # wb - write binary, contents will be rewritten
-        async with aiofiles.open(f"/composefiles/{file.filename}", "wb") as out_file:
-            await out_file.write(contents)
-
-        await publish_message_data(f"Uploaded: {file.filename}", "Success", redis=redis)
-        return JSONResponse(
-            content={"message": f"Successfully uploaded {file.filename}"},
-            status_code=200,
-        )
-    except Exception as e:
-        await publish_message_data(
-            f"API error, please try again: {e}", "Error", redis=redis
-        )
-        return JSONResponse(
-            content={"message": "Error processing uploaded file"}, status_code=400
-        )
-
-
 @app.get("/api/streams/composefiles")
 async def list_files():
     async def event_stream():
@@ -349,6 +325,30 @@ async def pull_images(req: Request):
         success_msg="Image pulled",
         error_msg="Error",
     )
+
+
+@app.post("/api/compose/upload")
+async def upload_file(file: UploadFile = File(...)):
+    try:
+        contents = await file.read()
+
+        # Write file to /composefiles directory
+        # wb - write binary, contents will be rewritten
+        async with aiofiles.open(f"/composefiles/{file.filename}", "wb") as out_file:
+            await out_file.write(contents)
+
+        await publish_message_data(f"Uploaded: {file.filename}", "Success", redis=redis)
+        return JSONResponse(
+            content={"message": f"Successfully uploaded {file.filename}"},
+            status_code=200,
+        )
+    except Exception as e:
+        await publish_message_data(
+            f"API error, please try again: {e}", "Error", redis=redis
+        )
+        return JSONResponse(
+            content={"message": "Error processing uploaded file"}, status_code=400
+        )
 
 
 @app.post("/api/compose/delete")

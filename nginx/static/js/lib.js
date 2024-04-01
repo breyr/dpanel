@@ -282,7 +282,7 @@ $(document).ready(function () {
         formData.append('file', file);
 
         $.ajax({
-            url: 'http://localhost:5002/api/upload/compose',
+            url: 'http://localhost:5002/api/compose/upload',
             type: 'POST',
             data: formData,
             processData: false,  // tell jQuery not to process the data
