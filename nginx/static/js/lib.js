@@ -310,22 +310,26 @@ $(document).ready(function () {
         }
         composeFilesSource.onmessage = function (event) {
             // event.data.files -> list of file names within /composefiles directory
+            if (event.data.trim() === "") {
+                // data hasnt changed, recieved heartbeat from server so return
+                return;
+            }
             const data = JSON.parse(event.data);
             data.files.forEach(fileName => {
                 if (!composeFilesState.has(fileName)) {
                     composeFilesState.add(fileName);
                     const newCard = `<div class="compose-file d-flex justify-content-center align-items-center" id="${fileName}">
-                        <p>${fileName}</p>
-                        <div
-                            class="hover-div d-flex flex-column justify-content-center align-items-center">
-                            <button class="btn btn-primary mb-2" id="run-compose-btn">Run</button>
-                            <button class="btn btn-danger" id="delete-compose-btn">Delete</button>
-                        </div>
-                    </div>`;
+                            <p>${fileName}</p>
+                            <div
+                                class="hover-div d-flex flex-column justify-content-center align-items-center">
+                                <button class="btn btn-primary mb-2" id="run-compose-btn">Run</button>
+                                <button class="btn btn-danger" id="delete-compose-btn">Delete</button>
+                            </div>
+                        </div>`;
                     $('#compose-files-list').append(newCard);
                 }
             });
-        };
+        }
     }
     initComposeFilesSource();
 
