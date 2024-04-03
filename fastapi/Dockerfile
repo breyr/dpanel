@@ -6,6 +6,18 @@ COPY ./requirements.txt /code/requirements.txt
 
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
+RUN python-on-whales download-cli
+
+# install docker buildx, this step is optional
+RUN mkdir -p ~/.docker/cli-plugins/
+RUN wget https://github.com/docker/buildx/releases/download/v0.6.3/buildx-v0.6.3.linux-amd64 -O ~/.docker/cli-plugins/docker-buildx
+RUN chmod a+x  ~/.docker/cli-plugins/docker-buildx
+
+# install docker compose, this step is optional
+RUN mkdir -p ~/.docker/cli-plugins/
+RUN wget https://github.com/docker/compose/releases/download/v2.0.1/docker-compose-linux-x86_64 -O ~/.docker/cli-plugins/docker-compose
+RUN chmod a+x  ~/.docker/cli-plugins/docker-compose
+
 COPY ./main.py /code/
 COPY ./helpers.py /code/
 

@@ -131,28 +131,40 @@
                                                     aria-label="Close"></button>
                                             </div>
                                             <div class="modal-body">
-                                                <div class="mb-3 p-3 border rounded bg-light" style="padding-bottom: 0px !important;">
+                                                <div class="mb-3 p-3 border rounded bg-light"
+                                                    style="padding-bottom: 0px !important;">
                                                     <h4 class="mb-3">Select what to prune:</h4>
                                                     <div class="form-check mb-3">
-                                                        <input class="form-check-input" type="checkbox" value="" id="all-prune-check">
-                                                        <label class="form-check-label" for="all-prune-check">All</label>
+                                                        <input class="form-check-input" type="checkbox" value=""
+                                                            id="all-prune-check">
+                                                        <label class="form-check-label"
+                                                            for="all-prune-check">All</label>
                                                     </div>
-                                                    <div class="d-flex flex-column flex-md-row gap-3 mb-3" id="individual-prune-selects">
+                                                    <div class="d-flex flex-column flex-md-row gap-3 mb-3"
+                                                        id="individual-prune-selects">
                                                         <div class="form-check">
-                                                            <input class="form-check-input" type="checkbox" value="containers" id="cont-prune-check">
-                                                            <label class="form-check-label" for="cont-prune-check">Containers</label>
+                                                            <input class="form-check-input" type="checkbox"
+                                                                value="containers" id="cont-prune-check">
+                                                            <label class="form-check-label"
+                                                                for="cont-prune-check">Containers</label>
                                                         </div>
                                                         <div class="form-check">
-                                                            <input class="form-check-input" type="checkbox" value="images" id="img-prune-check">
-                                                            <label class="form-check-label" for="img-prune-check">Images</label>
+                                                            <input class="form-check-input" type="checkbox"
+                                                                value="images" id="img-prune-check">
+                                                            <label class="form-check-label"
+                                                                for="img-prune-check">Images</label>
                                                         </div>
                                                         <div class="form-check">
-                                                            <input class="form-check-input" type="checkbox" value="volumes" id="vol-prune-check">
-                                                            <label class="form-check-label" for="vol-prune-check">Volumes</label>
+                                                            <input class="form-check-input" type="checkbox"
+                                                                value="volumes" id="vol-prune-check">
+                                                            <label class="form-check-label"
+                                                                for="vol-prune-check">Volumes</label>
                                                         </div>
                                                         <div class="form-check">
-                                                            <input class="form-check-input" type="checkbox" value="networks" id="net-prune-check">
-                                                            <label class="form-check-label" for="net-prune-check">Networks</label>
+                                                            <input class="form-check-input" type="checkbox"
+                                                                value="networks" id="net-prune-check">
+                                                            <label class="form-check-label"
+                                                                for="net-prune-check">Networks</label>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -335,11 +347,22 @@
                                 </div>
                                 <div class="modal-body">
                                     <div class="modal-body">
-                                        <form id="uploadComposeForm" enctype="multipart/form-data">
-                                            <input type="file" name="fileInput" id="fileInput" accept=".yaml, .yml">
-                                            <br>
-                                            <button class="btn btn-secondary" id="upload-compose-btn">Upload</button>
-                                        </form>
+                                        <div class="mb-3">
+                                            <label for="projectName" class="form-label">Project name <span
+                                                    class="text-danger">*</span></label>
+                                            <input type="email" class="form-control" id="projectName"
+                                                placeholder="wordpress-stack" required>
+                                            <small>this will become the name of your compose file</small>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="yamlContents">Docker Compose YAML contents <span
+                                                    class="text-danger">*</span></label>
+                                            <textarea class="form-control" name="yamlContents" id="yamlContents"
+                                                rows="15" required></textarea>
+                                        </div>
+                                        <br>
+                                        <button class="btn btn-secondary" id="upload-compose-btn">Upload</button>
                                     </div>
                                 </div>
                             </div>

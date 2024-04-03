@@ -141,3 +141,17 @@ function performActionImage(action, actionBtnId) {
       break;
   }
 }
+
+function performActionCompose(action, projectName) {
+  // compose up, compose down, delete (file)
+  $.ajax({
+    url: `http://localhost:5002/api/compose/${action}`,
+    method: "post",
+    data: JSON.stringify({
+      projectName
+    }),
+    success: function (res) {
+      // implement
+    }
+  });
+}

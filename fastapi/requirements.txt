@@ -7,3 +7,4 @@ sse_starlette
 docker
 python-multipart
 aiofiles
+python-on-whales

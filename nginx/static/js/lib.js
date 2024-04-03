@@ -17,6 +17,13 @@ $(document).ready(function () {
             performActionImage(action, `${action}-img-btn`);
         });
     });
+    // add actions to all the compose file buttons
+    ['down', 'up', 'delete'].forEach(action => {
+        $(document).on('click', `[id^="${action}-compose-btn-"]`, function () {
+            const projectName = this.id.replace(`${action}-compose-btn-`, '');
+            performActionCompose(action, projectName);
+        });
+    });
 
     // table spinners
     $("#containers-loading").show();
@@ -273,24 +280,25 @@ $(document).ready(function () {
 
     // handle file uploading
     $('#upload-compose-btn').click(function (e) {
-        e.preventDefault();
 
-        var fileInput = document.querySelector('#fileInput');
-        var file = fileInput.files[0];
-        var formData = new FormData();
-
-        formData.append('file', file);
+        // get projectName
+        const projectName = $('#projectName').val();
+        // get yaml contents
+        const yamlContents = $('#yamlContents').val();
 
         $.ajax({
             url: 'http://localhost:5002/api/compose/upload',
             type: 'POST',
-            data: formData,
+            data: JSON.stringify({
+                "projectName": projectName,
+                "yamlContents": yamlContents,
+            }),
             processData: false,  // tell jQuery not to process the data
             contentType: false,  // tell jQuery not to set contentType
             success: function (data) {
-                // file uploaded
-                // clear file upload input
-                fileInput.value = '';
+                // clear projectName input and textarea
+                projectName.val('');
+                yamlContents.val('');
             }
         });
     });
@@ -322,8 +330,9 @@ $(document).ready(function () {
                             <p>${fileName}</p>
                             <div
                                 class="hover-div d-flex flex-column justify-content-center align-items-center">
-                                <button class="btn btn-primary mb-2" id="run-compose-btn">Run</button>
-                                <button class="btn btn-danger" id="delete-compose-btn">Delete</button>
+                                <button class="btn btn-primary mb-2" id="up-compose-btn-${fileName}">Up</button>
+                                <button class="btn btn-danger mb-2" id="down-compose-btn-${fileName}">Down</button>
+                                <button class="btn btn-secondary" id="delete-compose-btn-${fileName}"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </div>`;
                     $('#compose-files-list').append(newCard);
