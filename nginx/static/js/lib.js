@@ -273,7 +273,7 @@ $(document).ready(function () {
     var containerStatsSource = null;
     function initContainerStatsES() {
         if (containerStatsSource == null || containerStatsSource.readyState == 2) {
-            containerStatsSource = new EventSource('http://localhost:5002/api/streams/containerlist');//how come /containermetrics doesnt have the id
+            containerStatsSource = new EventSource('http://localhost:5002/api/streams/containermetrics');//how come /containermetrics doesnt have the id
             containerStatsSource.onerror = function (event) {
                 if (containerStatsSource.readyState == 2) {
                     // retry connection to ES
@@ -287,8 +287,9 @@ $(document).ready(function () {
         const statsTbody = $("#stats-tbody");
         containerStatsSource.onmessage = function(event) {
             const data = JSON.parse(event.data);
+            console.log(data)
 
-            const containerIds = new Set(data.map(container => container.ID));
+            const containerIds = new Set(data.id);
 
             statsTbody.find('tr').each(function () {
                 const tr = $(this);
@@ -298,10 +299,10 @@ $(document).ready(function () {
                 }
             });
             $.each(data, function (i, container) {
-                let tr = statsTbody.find('#row-' + container.ID);
+                let tr = statsTbody.find('#row-' + data.id);
                 if (!tr.length) {
                     // If the row does not exist, create it
-                    tr = $("<tr>").attr('id', 'row-' + container.ID);
+                    tr = $("<tr>").attr('id', 'row-' + data.id);
                     tr.append($("<td>").html('<input type="checkbox" class="tr-stats-checkbox" value="' + container.ID + '" name="container"> <span class="spinner-border spinner-border-sm text-warning d-none" role="status" aria-hidden="true"></span>'));
                     tr.append($("<td>").attr('id', 'name-' + container.ID));
                     tr.append($("<td>").attr('id', 'cpu-percent-' + container.ID));
@@ -322,23 +323,23 @@ $(document).ready(function () {
                 const attributes = ['Names', 'CpuPercent', 'MemUsage', 'MemLimit', 'MemPercent'];
                 attributes.forEach(attr => {
                     // If the attribute has changed
-                    if (previousStateStats[container.ID]?.[attr] !== container[attr]) {
+                    if (previousStateStats[container.id]?.[attr] !== container[attr]) {
                         switch (attr) {
                             case 'Names':
-                                $(`#name-${container.ID}`).text(container.Names[0].substring(1));
+                                $(`#name-${data.id}`).text(data.name);
                                 break;
-                            case 'CpuPercent':
-                                $(`#cpu-percent-${container.ID}`).html(`<span>${container.cpu_percent}</span>`);
-                                break;
-                            case 'MemUsage':
-                                $(`#memory-usage-${container.ID}`).html(`<span>${container.memoryUsage}</span>`);
-                                break;
-                            case 'MemLimit':
-                                $(`#memory-limit-${container.ID}`).html(`<span style="padding-left: 25px">${container.memoryLimit}</span>`);
-                                break;
-                            case 'MemPercent':
-                                $(`#memory-percent-${container.memoryPercent}`);
-                                break;
+                            // case 'CpuPercent':
+                            //     $(`#cpu-percent-${container.id}`).html(`<span>${container.cpu_percent}</span>`);
+                            //     break;
+                            // case 'MemUsage':
+                            //     $(`#memory-usage-${container.id}`).html(`<span>${container.memoryUsage}</span>`);
+                            //     break;
+                            // case 'MemLimit':
+                            //     $(`#memory-limit-${container.id}`).html(`<span style="padding-left: 25px">${container.memoryLimit}</span>`);
+                            //     break;
+                            // case 'MemPercent':
+                            //     $(`#memory-percent-${container.memoryPercent}`);
+                            //     break;
                         }
                     }
                 });
