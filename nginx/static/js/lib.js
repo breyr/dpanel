@@ -281,13 +281,20 @@ $(document).ready(function () {
 
     // handle file uploading
     $('#upload-compose-btn').click(function (e) {
-        // disable button and show spinner
-        $(this).addClass('disabled');
-        $(this).find('.spinner-border').toggleClass('d-none');
         // get projectName
         const projectName = $('#projectName').val();
         // get yaml contents
         const yamlContents = $('#yamlContents').val();
+
+        // alert if fields aren't filled in
+        if (!projectName || !yamlContents) {
+            alert('Please fill out required fields.');
+            return;
+        }
+
+        // disable button and show spinner
+        $(this).addClass('disabled');
+        $(this).find('.spinner-border').toggleClass('d-none');
 
         $.ajax({
             url: 'http://localhost:5002/api/compose/upload',
