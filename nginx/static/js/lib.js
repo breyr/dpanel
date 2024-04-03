@@ -329,7 +329,10 @@ $(document).ready(function () {
                 // data hasnt changed, recieved heartbeat from server so return
                 return;
             }
+            // if event.data['files'] doesnt have what is on the screen, remove it
             const data = JSON.parse(event.data);
+            console.log(data);
+            console.log("Tracked state: " + composeFilesState);
             data.files.forEach(fileName => {
                 if (!composeFilesState.has(fileName)) {
                     composeFilesState.add(fileName);
@@ -355,6 +358,15 @@ $(document).ready(function () {
                             </div>
                         </div>`;
                     $('#compose-files-list').append(newCard);
+                }
+            });
+
+            // Remove cards that are not in the current files list
+            $('.compose-file').each(function () {
+                const fileName = this.id;
+                if (!data.files.includes(fileName)) {
+                    $(this).remove();
+                    composeFilesState.delete(fileName);
                 }
             });
         }
