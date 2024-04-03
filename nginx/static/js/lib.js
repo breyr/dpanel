@@ -306,8 +306,8 @@ $(document).ready(function () {
             processData: false,  // tell jQuery not to process the data
             contentType: false,  // tell jQuery not to set contentType
             success: function (data) {
-                $(this).removeClass('disabled');
-                $(this).find('.spinner-border').toggleClass('d-none');
+                $('#upload-compose-btn').removeClass('disabled');
+                $('#upload-compose-btn').find('.spinner-border').toggleClass('d-none');
                 // clear projectName input and textarea
                 $('#projectName').val('');
                 $('#yamlContents').val('');
