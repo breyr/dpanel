@@ -238,7 +238,7 @@ $(document).ready(function () {
                                 const createdTimeStamp = new Date(image.Created * 1000);
                                 $(`#created-date-${image.ID}`).html(`<span>${createdTimeStamp.toLocaleDateString()}</span>`);
                                 break;
-                                case 'NumContainers':
+                            case 'NumContainers':
                                 $(`#used-by-${image.ID}`).html(`<span style="padding-left: 25px">${image.NumContainers}</span>`);
                                 break;
                             case 'Size':
@@ -273,6 +273,10 @@ $(document).ready(function () {
     var containerStatsSource = null;
     function initContainerStatsES() {
         if (containerStatsSource == null || containerStatsSource.readyState == 2) {
+            // container metrics are being populated individually instead of all at once
+            // Go is publishing all individual container stats as messages to container_metrics channel
+            // so that means each message HAS an id for a container and stats for ONLY that container
+            // this is why containermetrics doesnt need to use id
             containerStatsSource = new EventSource('http://localhost:5002/api/streams/containermetrics');//how come /containermetrics doesnt have the id
             containerStatsSource.onerror = function (event) {
                 if (containerStatsSource.readyState == 2) {
@@ -285,9 +289,26 @@ $(document).ready(function () {
         let previousStateStats = {};
         let firstLoadStatsList = true;
         const statsTbody = $("#stats-tbody");
-        containerStatsSource.onmessage = function(event) {
+        containerStatsSource.onmessage = function (event) {
             const data = JSON.parse(event.data);
             console.log(data)
+            // data is an object representing the following
+            // look at the console log as some fields will be nested
+            /*
+            Read    time.Time `json:"read"`
+            PreRead time.Time `json:"preread"`
+            PidsStats  PidsStats  `json:"pids_stats,omitempty"`
+            BlkioStats BlkioStats `json:"blkio_stats,omitempty"`
+            NumProcs     uint32       `json:"num_procs"`
+            StorageStats StorageStats `json:"storage_stats,omitempty"`
+            CPUStats    CPUStats    `json:"cpu_stats,omitempty"`
+            PreCPUStats CPUStats    `json:"precpu_stats,omitempty"` // "Pre"="Previous"
+            MemoryStats MemoryStats `json:"memory_stats,omitempty"`
+            Name string `json:"name,omitempty"`
+            ID   string `json:"id,omitempty"`
+            Networks map[string]NetworkStats `json:"networks,omitempty"` - maybe
+            */
+            // so when updating, have to get the row based on the ID passed in the data object and then grab the relevant stats
 
             const containerIds = new Set(data.id);
 
