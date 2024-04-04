@@ -17,6 +17,8 @@
     <link rel="stylesheet" href="./static/css/styles.css">
     <!-- Font Awesome -->
     <script src="https://kit.fontawesome.com/4137f8921b.js" crossorigin="anonymous"></script>
+    <!-- dropzone -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.css" rel="stylesheet">
 </head>
 
 <body>
@@ -129,28 +131,40 @@
                                                     aria-label="Close"></button>
                                             </div>
                                             <div class="modal-body">
-                                                <div class="mb-3 p-3 border rounded bg-light" style="padding-bottom: 0px !important;">
+                                                <div class="mb-3 p-3 border rounded bg-light"
+                                                    style="padding-bottom: 0px !important;">
                                                     <h4 class="mb-3">Select what to prune:</h4>
                                                     <div class="form-check mb-3">
-                                                        <input class="form-check-input" type="checkbox" value="" id="all-prune-check">
-                                                        <label class="form-check-label" for="all-prune-check">All</label>
+                                                        <input class="form-check-input" type="checkbox" value=""
+                                                            id="all-prune-check">
+                                                        <label class="form-check-label"
+                                                            for="all-prune-check">All</label>
                                                     </div>
-                                                    <div class="d-flex flex-column flex-md-row gap-3 mb-3" id="individual-prune-selects">
+                                                    <div class="d-flex flex-column flex-md-row gap-3 mb-3"
+                                                        id="individual-prune-selects">
                                                         <div class="form-check">
-                                                            <input class="form-check-input" type="checkbox" value="containers" id="cont-prune-check">
-                                                            <label class="form-check-label" for="cont-prune-check">Containers</label>
+                                                            <input class="form-check-input" type="checkbox"
+                                                                value="containers" id="cont-prune-check">
+                                                            <label class="form-check-label"
+                                                                for="cont-prune-check">Containers</label>
                                                         </div>
                                                         <div class="form-check">
-                                                            <input class="form-check-input" type="checkbox" value="images" id="img-prune-check">
-                                                            <label class="form-check-label" for="img-prune-check">Images</label>
+                                                            <input class="form-check-input" type="checkbox"
+                                                                value="images" id="img-prune-check">
+                                                            <label class="form-check-label"
+                                                                for="img-prune-check">Images</label>
                                                         </div>
                                                         <div class="form-check">
-                                                            <input class="form-check-input" type="checkbox" value="volumes" id="vol-prune-check">
-                                                            <label class="form-check-label" for="vol-prune-check">Volumes</label>
+                                                            <input class="form-check-input" type="checkbox"
+                                                                value="volumes" id="vol-prune-check">
+                                                            <label class="form-check-label"
+                                                                for="vol-prune-check">Volumes</label>
                                                         </div>
                                                         <div class="form-check">
-                                                            <input class="form-check-input" type="checkbox" value="networks" id="net-prune-check">
-                                                            <label class="form-check-label" for="net-prune-check">Networks</label>
+                                                            <input class="form-check-input" type="checkbox"
+                                                                value="networks" id="net-prune-check">
+                                                            <label class="form-check-label"
+                                                                for="net-prune-check">Networks</label>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -213,7 +227,7 @@
                 </div>
             </div>
 
-            <!-- IMAGES AND VOLUMES -->
+            <!-- IMAGES AND COMPOSE -->
             <div class="container-fluid" style="padding: 0px !important;">
                 <div class="row">
 
@@ -295,20 +309,67 @@
                         </div>
                     </div>
 
-                    <!-- Volumes block -->
+                    <!-- Compose block -->
                     <div class="col-md-6">
                         <div class="p-3 my-3 bg-light rounded shadow" style="margin-top: 0px !important;">
                             <div class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse"
-                                data-bs-target="#volumeDetails" aria-expanded="false" aria-controls="volumeDetails">
+                                data-bs-target="#composeDetails" aria-expanded="false" aria-controls="composeDetails">
                                 <div>
-                                    <i class="bi bi-hdd-stack me-2"></i> <!-- Changed icon -->
-                                    <span class="page-title">Volumes</span>
+                                    <i class="bi bi-vector-pen"></i>
+                                    <span class="page-title">Compose</span>
                                 </div>
                                 <i class="bi bi-chevron-down"></i>
                             </div>
-                            <div class="collapse" id="volumeDetails">
+                            <div class="collapse" id="composeDetails">
                                 <!-- Your content for the Volumes block goes here -->
-                                hello world
+                                <div class="mt-2">
+                                    <button class="btn btn-secondary" data-bs-toggle="modal"
+                                        data-bs-target="#composeModal">
+                                        <i class="bi bi-file-earmark-arrow-up"></i>
+                                        Upload Compose File
+                                    </button>
+                                    <section id="compose-files-list" class="d-flex flex-wrap">
+                                    </section>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- compose modal -->
+                    <div class="modal" id="composeModal" tabindex="-1" aria-labelledby="composeModalLabel"
+                        aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Upload Compose File</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label for="projectName" class="form-label">Project name <span
+                                                    class="text-danger">*</span></label>
+                                            <input type="email" class="form-control" id="projectName"
+                                                placeholder="wordpress-stack" required>
+                                            <small>this will become the name of your compose file</small>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="yamlContents">Docker Compose YAML contents <span
+                                                    class="text-danger">*</span></label>
+                                            <textarea class="form-control" name="yamlContents" id="yamlContents"
+                                                rows="15" required></textarea>
+                                        </div>
+                                        <br>
+                                        <button class="btn btn-secondary" id="upload-compose-btn">
+                                            <span class="spinner-border spinner-border-sm d-none"
+                                                aria-hidden="true"></span>
+                                            <span class="visually-hidden" role="status">Loading...</span>
+                                            Upload
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -330,6 +391,8 @@
     <!-- Custom JS -->
     <script src="./static/js/lib.js"></script>
     <script src="./static/js/actions.js"></script>
+    <!-- dropzone -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.js"></script>
     <!-- AJAX Imports -->
     <script id="js-imports"></script>
 </body>
