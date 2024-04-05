@@ -7,7 +7,11 @@ import aioredis
 from aioredis import Redis
 from aiodocker.exceptions import DockerError
 from typing import Callable, List
+from python_on_whales import DockerClient, DockerException
 import asyncio
+import aiofiles
+import os
+import json
 from helpers import (
     ASYNC_DOCKER_CLIENT,
     SYNC_DOCKER_CLIENT,
@@ -167,6 +171,18 @@ async def perform_action(
 
 
 # ======== ENDPOINTS =========
+
+
+@app.get("/api/streams/composefiles")
+async def list_files():
+    async def event_stream():
+        while True:
+            files = os.listdir("./composefiles")
+            files = [os.path.splitext(file)[0] for file in files]
+            yield f"{json.dumps({'files': files})}\n\n"
+            await asyncio.sleep(1)
+
+    return EventSourceResponse(event_stream())
 
 
 @app.get("/api/streams/containerlist")
@@ -353,3 +369,118 @@ async def pull_images(req: Request):
         success_msg="Image pulled",
         error_msg="Error",
     )
+
+
+@app.post("/api/compose/upload")
+async def upload_file(req: Request):
+    try:
+        data = await req.json()
+        project_name = data.get("projectName")
+        yaml_contents = data.get("yamlContents")
+
+        # Create a new file with the project name as the filename and .yml as the extension
+        async with aiofiles.open(
+            f"./composefiles/{project_name}.yaml", "w"
+        ) as out_file:
+            await out_file.write(yaml_contents)
+
+        await publish_message_data(
+            f"Uploaded: {project_name}.yaml", "Success", redis=redis
+        )
+        return JSONResponse(
+            content={"message": f"Successfully uploaded {project_name}.yaml"},
+            status_code=200,
+        )
+    except Exception as e:
+        await publish_message_data(
+            f"API error, please try again: {e}", "Error", redis=redis
+        )
+        return JSONResponse(
+            content={"message": "Error processing uploaded file"}, status_code=400
+        )
+
+
+@app.post("/api/compose/delete")
+async def delete_compose_file(req: Request):
+    data = await req.json()
+    logging.info(f"File to delete: {data}")
+    file_to_delete = data.get("projectName")
+    try:
+        os.remove(f"./composefiles/{file_to_delete}.yaml")
+        await publish_message_data(
+            f"Successfully deleted {file_to_delete}", "Success", redis=redis
+        )
+        return JSONResponse(
+            content={"message": f"Successfully deleted {file_to_delete}"},
+            status_code=200,
+        )
+    except Exception as e:
+        await publish_message_data(
+            f"API error, please try again: {e}", "Error", redis=redis
+        )
+        return JSONResponse(
+            content={"message": f"Error deleting file: {e}"}, status_code=400
+        )
+
+
+@app.post("/api/compose/up")
+async def run_compose_file(req: Request):
+    data = await req.json()
+    # get path of file to run
+    file_to_run = data.get("projectName")
+    file_path = f"./composefiles/{file_to_run}.yaml"
+    # project name is the name of the file
+    project_name = file_to_run.split(".")[0]
+    try:
+        # create docker client
+        logging.info("Attempting to compose up")
+        docker = DockerClient(
+            compose_files=[file_path], compose_project_name=project_name
+        )
+        docker.compose.up(detach=True)
+        await publish_message_data(
+            f"Compose up successful: {file_to_run}", "Success", redis=redis
+        )
+        return JSONResponse(
+            content={"message": f"Compose up successful: {file_to_run}"},
+            status_code=200,
+        )
+    except DockerException as e:
+        await publish_message_data(
+            f"API error, please try again: {e}", "Error", redis=redis
+        )
+        return JSONResponse(
+            content={"message": f"Docker compose error: {e}"}, status_code=400
+        )
+
+
+@app.post("/api/compose/down")
+async def compose_down(req: Request):
+    data = await req.json()
+    # get path of file to run
+    file_to_run = data.get("projectName")
+    file_path = f"./composefiles/{file_to_run}.yaml"
+    # project name is the name of the file
+    project_name = file_to_run.split(".")[0]
+    # read the project name from the Docker Compose file
+    try:
+        # create docker client
+        logging.info("Attempting to compose up")
+        docker = DockerClient(
+            compose_files=[file_path], compose_project_name=project_name
+        )
+        docker.compose.down()
+        await publish_message_data(
+            f"Compose down successful: {file_to_run}", "Success", redis=redis
+        )
+        return JSONResponse(
+            content={"message": f"Compose down successful: {file_to_run}"},
+            status_code=200,
+        )
+    except DockerException as e:
+        await publish_message_data(
+            f"API error, please try again: {e}", "Error", redis=redis
+        )
+        return JSONResponse(
+            content={"message": f"Docker compose error: {e}"}, status_code=400
+        )

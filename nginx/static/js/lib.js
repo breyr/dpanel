@@ -17,6 +17,14 @@ $(document).ready(function () {
             performActionImage(action, `${action}-img-btn`);
         });
     });
+    // add actions to all the compose file buttons
+    ['down', 'up', 'delete'].forEach(action => {
+        // pass down the click event, to modify the button
+        $(document).on('click', `[id^="${action}-compose-btn-"]`, function (event) {
+            const projectName = this.id.replace(`${action}-compose-btn-`, '');
+            performActionCompose(action, projectName, event);
+        });
+    });
 
     // table spinners
     $("#containers-loading").show();
@@ -312,7 +320,7 @@ $(document).ready(function () {
             */
             // so when updating, have to get the row based on the ID passed in the data object and then grab the relevant stats
             // console.log(data.id)
-        
+
             //figure out Id situation becaues i need them for each variable for html
 
             statsTbody.find('tr').each(function () {
@@ -323,7 +331,7 @@ $(document).ready(function () {
                     containerIds.delete();
                 }
             });
-            
+
             let tr = statsTbody.find('#row-' + data.id);
             if (!tr.length) {
                 // If the row does not exist, create it
@@ -380,13 +388,115 @@ $(document).ready(function () {
     initContainerStatsES()
 
 
+
+
+    // handle file uploading
+    $('#upload-compose-btn').click(function (e) {
+        // get projectName
+        const projectName = $('#projectName').val();
+        // get yaml contents
+        const yamlContents = $('#yamlContents').val();
+
+        // alert if fields aren't filled in
+        if (!projectName || !yamlContents) {
+            alert('Please fill out required fields.');
+            return;
+        }
+
+        // disable button and show spinner
+        $(this).addClass('disabled');
+        $(this).find('.spinner-border').toggleClass('d-none');
+
+        $.ajax({
+            url: 'http://localhost:5002/api/compose/upload',
+            type: 'POST',
+            data: JSON.stringify({
+                "projectName": projectName,
+                "yamlContents": yamlContents,
+            }),
+            processData: false,  // tell jQuery not to process the data
+            contentType: false,  // tell jQuery not to set contentType
+            success: function (data) {
+                $('#upload-compose-btn').removeClass('disabled');
+                $('#upload-compose-btn').find('.spinner-border').toggleClass('d-none');
+                // clear projectName input and textarea
+                $('#projectName').val('');
+                $('#yamlContents').val('');
+                // hide modal
+                $('#composeModal').modal('hide');
+            }
+        });
+    });
+
+    // retrieve composefiles eventsource
+    var composeFilesSource = null;
+    let composeFilesState = new Set();
+    function initComposeFilesSource() {
+        if (composeFilesSource == null || composeFilesSource.readyState == 2) {
+            composeFilesSource = new EventSource('http://localhost:5002/api/streams/composefiles');
+            composeFilesSource.onerror = function (event) {
+                if (composeFilesSource.readyState == 2) {
+                    // retry connection to ES
+                    setTimeout(composeFilesSource, 5000);
+                }
+            }
+        }
+        composeFilesSource.onmessage = function (event) {
+            // event.data.files -> list of file names within /composefiles directory
+            if (event.data.trim() === "") {
+                // data hasnt changed, recieved heartbeat from server so return
+                return;
+            }
+            // if event.data['files'] doesnt have what is on the screen, remove it
+            const data = JSON.parse(event.data);
+            console.log(data);
+            console.log("Tracked state: " + composeFilesState);
+            data.files.forEach(fileName => {
+                if (!composeFilesState.has(fileName)) {
+                    composeFilesState.add(fileName);
+                    const newCard = `<div class="compose-file d-flex justify-content-center align-items-center" id="${fileName}">
+                            <p>${fileName}</p>
+                            <div
+                                class="hover-div d-flex flex-column justify-content-center align-items-center">
+                                <button class="btn btn-primary mb-2" id="up-compose-btn-${fileName}">
+                                    <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
+                                    <span class="visually-hidden" role="status">Loading...</span>
+                                    Up
+                                </button>
+                                <button class="btn btn-danger mb-2" id="down-compose-btn-${fileName}">
+                                    <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
+                                    <span class="visually-hidden" role="status">Loading...</span>
+                                    Down
+                                </button>
+                                <button class="btn btn-secondary" id="delete-compose-btn-${fileName}">
+                                    <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
+                                    <span class="visually-hidden" role="status">Loading...</span>
+                                    <i class="bi bi-trash-fill"></i>
+                                </button>
+                            </div>
+                        </div>`;
+                    $('#compose-files-list').append(newCard);
+                }
+            });
+
+            // Remove cards that are not in the current files list
+            $('.compose-file').each(function () {
+                const fileName = this.id;
+                if (!data.files.includes(fileName)) {
+                    $(this).remove();
+                    composeFilesState.delete(fileName);
+                }
+            });
+        }
+    }
+    initComposeFilesSource();
+
     // Function to close EventSource connections
     // close() calls the call_on_close in server and unsubscribes from topic
     function closeEventSources() {
         containerListSource.close();
         messagesSource.close();
         imageListSource.close();
-        containerStatsSource.close();
     }
 
     // Close connections when the page is refreshed or closed

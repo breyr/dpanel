@@ -141,3 +141,22 @@ function performActionImage(action, actionBtnId) {
       break;
   }
 }
+
+function performActionCompose(action, projectName, event) {
+  // function to handle compose up, compose down, delete (file)
+  // show the spinner and diabled the button
+  const clickedButton = event.target;
+  $(clickedButton).find(".spinner-border").toggleClass('d-none');
+  $(clickedButton).addClass('disabled');
+  $.ajax({
+    url: `http://localhost:5002/api/compose/${action}`,
+    method: "post",
+    data: JSON.stringify({
+      projectName
+    }),
+    success: function (res) {
+      $(clickedButton).find(".spinner-border").toggleClass('d-none');
+      $(clickedButton).removeClass('disabled');
+    }
+  });
+}
