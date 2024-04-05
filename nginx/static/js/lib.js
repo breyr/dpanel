@@ -289,9 +289,10 @@ $(document).ready(function () {
         let previousStateStats = {};
         let firstLoadStatsList = true;
         const statsTbody = $("#stats-tbody");
+
         containerStatsSource.onmessage = function (event) {
             const data = JSON.parse(event.data);
-            console.log(data)
+            //console.log(data)
             // data is an object representing the following
             // look at the console log as some fields will be nested
             /*
@@ -309,9 +310,17 @@ $(document).ready(function () {
             Networks map[string]NetworkStats `json:"networks,omitempty"` - maybe
             */
             // so when updating, have to get the row based on the ID passed in the data object and then grab the relevant stats
-
-            const containerIds = new Set(data.id);
-
+            // console.log(data.id)
+        
+            //figure out Id situation becaues i need them for each variable for html
+            // const containerIds = new Set(data);
+            const idSet = new Set();
+            console.log(data.length)
+            $.each(data, function(){
+                idSet.add(this.id)
+            });
+            // console.log(idSet)
+        
             statsTbody.find('tr').each(function () {
                 const tr = $(this);
                 const id = tr.attr('id').substring(4);  // remove 'row-' prefix
@@ -320,16 +329,16 @@ $(document).ready(function () {
                 }
             });
             $.each(data, function (i, container) {
-                let tr = statsTbody.find('#row-' + data.id);
+                let tr = statsTbody.find('#row-' + container.id);
                 if (!tr.length) {
                     // If the row does not exist, create it
                     tr = $("<tr>").attr('id', 'row-' + data.id);
-                    tr.append($("<td>").html('<input type="checkbox" class="tr-stats-checkbox" value="' + container.ID + '" name="container"> <span class="spinner-border spinner-border-sm text-warning d-none" role="status" aria-hidden="true"></span>'));
-                    tr.append($("<td>").attr('id', 'name-' + container.ID));
-                    tr.append($("<td>").attr('id', 'cpu-percent-' + container.ID));
-                    tr.append($("<td>").attr('id', 'memory-usage-' + container.ID));
-                    tr.append($("<td>").attr('id', 'memory-limit-' + container.ID));
-                    tr.append($("<td>").attr('id', 'memory-percent-' + container.ID));
+                    tr.append($("<td>").html('<input type="checkbox" class="tr-stats-checkbox" value="' + data.id + '" name="container"> <span class="spinner-border spinner-border-sm text-warning d-none" role="status" aria-hidden="true"></span>'));
+                    tr.append($("<td>").attr('id', 'name-' + data.id));
+                    tr.append($("<td>").attr('id', 'cpu-percent-' + data.id));
+                    tr.append($("<td>").attr('id', 'memory-usage-' + data.id));
+                    tr.append($("<td>").attr('id', 'memory-limit-' + data.id));
+                    tr.append($("<td>").attr('id', 'memory-percent-' + data.id));
                     // first load, all rows are new so append in order the data was sent
                     // if its the first load, append everything
                     // if its a newly created container, will have to prepend
@@ -339,39 +348,39 @@ $(document).ready(function () {
                         statsTbody.prepend(tr);
                     }
                 }
-
+                
                 // Define the attributes to be updated
-                const attributes = ['Names', 'CpuPercent', 'MemUsage', 'MemLimit', 'MemPercent'];
+                const attributes = ['name', 'CpuPercent', 'MemUsage', 'MemLimit', 'MemPercent'];
                 attributes.forEach(attr => {
                     // If the attribute has changed
                     if (previousStateStats[container.id]?.[attr] !== container[attr]) {
                         switch (attr) {
-                            case 'Names':
-                                $(`#name-${data.id}`).text(data.name);
+                            case 'name':
+                                $(`#name-${container.id}`).text(container.name);
                                 break;
-                            // case 'CpuPercent':
-                            //     $(`#cpu-percent-${container.id}`).html(`<span>${container.cpu_percent}</span>`);
-                            //     break;
-                            // case 'MemUsage':
-                            //     $(`#memory-usage-${container.id}`).html(`<span>${container.memoryUsage}</span>`);
-                            //     break;
-                            // case 'MemLimit':
-                            //     $(`#memory-limit-${container.id}`).html(`<span style="padding-left: 25px">${container.memoryLimit}</span>`);
-                            //     break;
-                            // case 'MemPercent':
-                            //     $(`#memory-percent-${container.memoryPercent}`);
-                            //     break;
+                            case 'CpuPercent':
+                                $(`#cpu-percent-${container.id}`).html(`<span>${container.cpu_percent}</span>`);
+                                break;
+                            case 'MemUsage':
+                                $(`#memory-usage-${container.id}`).html(`<span>${container.memoryUsage}</span>`);
+                                break;
+                            case 'MemLimit':
+                                $(`#memory-limit-${container.id}`).html(`<span style="padding-left: 25px">${container.memoryLimit}</span>`);
+                                break;
+                            case 'MemPercent':
+                                $(`#memory-percent-${container.memoryPercent}`);
+                                break;
                         }
                     }
                 });
-
+        
                 // Store the current state of the container for the next update
                 previousStateStats[container.ID] = container;
             });
             if (firstLoadStatsList) {
                 firstLoadStatsList = false;
             }
-
+        
             $("#stats-loading").hide();
         };
     }
