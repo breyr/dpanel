@@ -289,10 +289,11 @@ $(document).ready(function () {
         let previousStateStats = {};
         let firstLoadStatsList = true;
         const statsTbody = $("#stats-tbody");
+        const containerIds = new Set();
 
         containerStatsSource.onmessage = function (event) {
             const data = JSON.parse(event.data);
-            //console.log(data)
+            // console.log(data)
             // data is an object representing the following
             // look at the console log as some fields will be nested
             /*
@@ -313,74 +314,66 @@ $(document).ready(function () {
             // console.log(data.id)
         
             //figure out Id situation becaues i need them for each variable for html
-            // const containerIds = new Set(data);
-            const idSet = new Set();
-            console.log(data.length)
-            $.each(data, function(){
-                idSet.add(this.id)
-            });
-            // console.log(idSet)
-        
+
             statsTbody.find('tr').each(function () {
                 const tr = $(this);
                 const id = tr.attr('id').substring(4);  // remove 'row-' prefix
                 if (!containerIds.has(id)) {
                     tr.remove();
+                    containerIds.delete();
                 }
             });
-            $.each(data, function (i, container) {
-                let tr = statsTbody.find('#row-' + container.id);
-                if (!tr.length) {
-                    // If the row does not exist, create it
-                    tr = $("<tr>").attr('id', 'row-' + data.id);
-                    tr.append($("<td>").html('<input type="checkbox" class="tr-stats-checkbox" value="' + data.id + '" name="container"> <span class="spinner-border spinner-border-sm text-warning d-none" role="status" aria-hidden="true"></span>'));
-                    tr.append($("<td>").attr('id', 'name-' + data.id));
-                    tr.append($("<td>").attr('id', 'cpu-percent-' + data.id));
-                    tr.append($("<td>").attr('id', 'memory-usage-' + data.id));
-                    tr.append($("<td>").attr('id', 'memory-limit-' + data.id));
-                    tr.append($("<td>").attr('id', 'memory-percent-' + data.id));
-                    // first load, all rows are new so append in order the data was sent
-                    // if its the first load, append everything
-                    // if its a newly created container, will have to prepend
-                    if (firstLoadStatsList) {
-                        statsTbody.append(tr);
-                    } else {
-                        statsTbody.prepend(tr);
+            
+            let tr = statsTbody.find('#row-' + data.id);
+            if (!tr.length) {
+                // If the row does not exist, create it
+                tr = $("<tr>").attr('id', 'row-' + data.id);
+                tr.append($("<td>").html('<input type="checkbox" class="tr-stats-checkbox" value="' + data.id + '" name="container"> <span class="spinner-border spinner-border-sm text-warning d-none" role="status" aria-hidden="true"></span>'));
+                tr.append($("<td>").attr('id', 'name-' + data.id));
+                tr.append($("<td>").attr('id', 'cpu-percent-' + data.id));
+                tr.append($("<td>").attr('id', 'memory-usage-' + data.id));
+                tr.append($("<td>").attr('id', 'memory-limit-' + data.id));
+                tr.append($("<td>").attr('id', 'memory-percent-' + data.id));
+                // first load, all rows are new so append in order the data was sent
+                // if its the first load, append everything
+                // if its a newly created container, will have to prepend
+                if (firstLoadStatsList) {
+                    statsTbody.append(tr);
+                } else {
+                    statsTbody.prepend(tr);
+                }
+                containerIds.add(data.id);
+            }
+            // Define the attributes to be updated
+            const attributes = ['name'];
+            attributes.forEach(attr => {
+                // If the attribute has changed
+                if (previousStateStats[data.id]?.[attr] !== data[attr]) {
+                    switch (attr) {
+                        case 'name':
+                            console.log(data.id)
+                            $(`#name-${data.id}`).text(data.name);
+                            break;
+                        // case 'CpuPercent':
+                        //     $(`#cpu-percent-${data.id}`).html(`<span>${data.cpu_stats.cpu_usage.total_usage}</span>`);
+                        //     break;
+                        // case 'usage':
+                        //     $(`#memory-usage-${data.id}`).html(`<span>${data.memory_stats.usage}</span>`);
+                        //     break;
+                        // case 'MemLimit':
+                        //     $(`#memory-limit-${data.id}`).html(`<span style="padding-left: 25px">${data.memory_stats.limit}</span>`);
+                        //     break;
+                        // case 'MemPercent':
+                        //     $(`#memory-percent-${data.networks}`);
+                        //     break;
                     }
                 }
-                
-                // Define the attributes to be updated
-                const attributes = ['name', 'CpuPercent', 'MemUsage', 'MemLimit', 'MemPercent'];
-                attributes.forEach(attr => {
-                    // If the attribute has changed
-                    if (previousStateStats[container.id]?.[attr] !== container[attr]) {
-                        switch (attr) {
-                            case 'name':
-                                $(`#name-${container.id}`).text(container.name);
-                                break;
-                            case 'CpuPercent':
-                                $(`#cpu-percent-${container.id}`).html(`<span>${container.cpu_percent}</span>`);
-                                break;
-                            case 'MemUsage':
-                                $(`#memory-usage-${container.id}`).html(`<span>${container.memoryUsage}</span>`);
-                                break;
-                            case 'MemLimit':
-                                $(`#memory-limit-${container.id}`).html(`<span style="padding-left: 25px">${container.memoryLimit}</span>`);
-                                break;
-                            case 'MemPercent':
-                                $(`#memory-percent-${container.memoryPercent}`);
-                                break;
-                        }
-                    }
-                });
-        
-                // Store the current state of the container for the next update
-                previousStateStats[container.ID] = container;
             });
+            // Store the current state of the container for the next update
+            previousStateStats[data.id] = data;
             if (firstLoadStatsList) {
                 firstLoadStatsList = false;
             }
-        
             $("#stats-loading").hide();
         };
     }
