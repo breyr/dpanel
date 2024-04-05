@@ -297,51 +297,20 @@ $(document).ready(function () {
         let previousStateStats = {};
         let firstLoadStatsList = true;
         const statsTbody = $("#stats-tbody");
-        const containerIds = new Set();
 
         containerStatsSource.onmessage = function (event) {
-            const data = JSON.parse(event.data);
-            // console.log(data)
-            // data is an object representing the following
-            // look at the console log as some fields will be nested
-            /*
-            Read    time.Time `json:"read"`
-            PreRead time.Time `json:"preread"`
-            PidsStats  PidsStats  `json:"pids_stats,omitempty"`
-            BlkioStats BlkioStats `json:"blkio_stats,omitempty"`
-            NumProcs     uint32       `json:"num_procs"`
-            StorageStats StorageStats `json:"storage_stats,omitempty"`
-            CPUStats    CPUStats    `json:"cpu_stats,omitempty"`
-            PreCPUStats CPUStats    `json:"precpu_stats,omitempty"` // "Pre"="Previous"
-            MemoryStats MemoryStats `json:"memory_stats,omitempty"`
-            Name string `json:"name,omitempty"`
-            ID   string `json:"id,omitempty"`
-            Networks map[string]NetworkStats `json:"networks,omitempty"` - maybe
-            */
-            // so when updating, have to get the row based on the ID passed in the data object and then grab the relevant stats
-            // console.log(data.id)
-
-            //figure out Id situation becaues i need them for each variable for html
-
-            statsTbody.find('tr').each(function () {
-                const tr = $(this);
-                const id = tr.attr('id').substring(4);  // remove 'row-' prefix
-                if (!containerIds.has(id)) {
-                    tr.remove();
-                    containerIds.delete();
-                }
-            });
-
-            let tr = statsTbody.find('#row-' + data.id);
+            const container = JSON.parse(event.data);
+            console.log(container);
+            let tr = statsTbody.find('#stats-row-' + container.ID);
             if (!tr.length) {
                 // If the row does not exist, create it
-                tr = $("<tr>").attr('id', 'row-' + data.id);
-                tr.append($("<td>").html('<input type="checkbox" class="tr-stats-checkbox" value="' + data.id + '" name="container"> <span class="spinner-border spinner-border-sm text-warning d-none" role="status" aria-hidden="true"></span>'));
-                tr.append($("<td>").attr('id', 'name-' + data.id));
-                tr.append($("<td>").attr('id', 'cpu-percent-' + data.id));
-                tr.append($("<td>").attr('id', 'memory-usage-' + data.id));
-                tr.append($("<td>").attr('id', 'memory-limit-' + data.id));
-                tr.append($("<td>").attr('id', 'memory-percent-' + data.id));
+                tr = $("<tr>").attr('id', 'stats-row-' + container.ID);
+                tr.append($("<td>").html('<input type="checkbox" class="tr-stats-checkbox" value="' + container.ID + '" name="container"> <span class="spinner-border spinner-border-sm text-warning d-none" role="status" aria-hidden="true"></span>'));
+                tr.append($("<td>").attr('id', 'stats-name-' + container.ID));
+                tr.append($("<td>").attr('id', 'stats-cpu-percent-' + container.ID));
+                tr.append($("<td>").attr('id', 'stats-memory-usage-' + container.ID));
+                tr.append($("<td>").attr('id', 'stats-memory-limit-' + container.ID));
+                tr.append($("<td>").attr('id', 'stats-memory-percent-' + container.ID));
                 // first load, all rows are new so append in order the data was sent
                 // if its the first load, append everything
                 // if its a newly created container, will have to prepend
@@ -350,35 +319,34 @@ $(document).ready(function () {
                 } else {
                     statsTbody.prepend(tr);
                 }
-                containerIds.add(data.id);
             }
             // Define the attributes to be updated
-            const attributes = ['name'];
+            const attributes = ['Name', 'CpuPercent', 'MemoryUsage', 'MemoryLimit', 'MemoryPercent'];
             attributes.forEach(attr => {
                 // If the attribute has changed
-                if (previousStateStats[data.id]?.[attr] !== data[attr]) {
+                if (previousStateStats[container.ID]?.[attr] !== container[attr]) {
                     switch (attr) {
-                        case 'name':
-                            console.log(data.id)
-                            $(`#name-${data.id}`).text(data.name);
+                        case 'Name':
+                            $(`#stats-name-${container.ID}`).text(container[attr]);
                             break;
-                        // case 'CpuPercent':
-                        //     $(`#cpu-percent-${data.id}`).html(`<span>${data.cpu_stats.cpu_usage.total_usage}</span>`);
-                        //     break;
-                        // case 'usage':
-                        //     $(`#memory-usage-${data.id}`).html(`<span>${data.memory_stats.usage}</span>`);
-                        //     break;
-                        // case 'MemLimit':
-                        //     $(`#memory-limit-${data.id}`).html(`<span style="padding-left: 25px">${data.memory_stats.limit}</span>`);
-                        //     break;
-                        // case 'MemPercent':
-                        //     $(`#memory-percent-${data.networks}`);
-                        //     break;
+                        case 'CpuPercent':
+                            $(`#stats-cpu-percent-${container.ID}`).text(container[attr]);
+                            break;
+                        case 'MemoryUsage':
+                            $(`#stats-memory-usage-${container.ID}`).text(container[attr]);
+                            break;
+                        case 'MemoryLimit':
+                            $(`#stats-memory-limit-${container.ID}`).text(container[attr]);
+                            break;
+                        case 'MemoryPercent':
+                            $(`#stats-memory-percent-${container.ID}`).text(container[attr]);
+                            break;
                     }
                 }
             });
             // Store the current state of the container for the next update
-            previousStateStats[data.id] = data;
+            previousStateStats[container.ID] = container;
+
             if (firstLoadStatsList) {
                 firstLoadStatsList = false;
             }
@@ -449,8 +417,6 @@ $(document).ready(function () {
             }
             // if event.data['files'] doesnt have what is on the screen, remove it
             const data = JSON.parse(event.data);
-            console.log(data);
-            console.log("Tracked state: " + composeFilesState);
             data.files.forEach(fileName => {
                 if (!composeFilesState.has(fileName)) {
                     composeFilesState.add(fileName);

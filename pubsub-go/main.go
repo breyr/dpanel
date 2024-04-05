@@ -33,6 +33,15 @@ type ImageInfo struct {
 	NumContainers uint8
 }
 
+type ContainerStats struct {
+	ID            string
+	Name          string
+	CpuPercent    float64
+	MemoryUsage   uint64
+	MemoryLimit   uint64
+	MemoryPercent float64
+}
+
 // Package level variables accessible by all functions
 // Good to keep up here if the variable doesnt need to be modified
 var ctx = context.Background()
@@ -148,7 +157,7 @@ func publishImagesList(dockerClient *client.Client) {
 }
 
 // chan<- means sending
-func collectContainerStats(ctx context.Context, dockerClient *client.Client, container types.Container, statsCh chan<- types.StatsJSON) {
+func collectContainerStats(ctx context.Context, dockerClient *client.Client, container types.Container, statsCh chan<- ContainerStats) {
 	stream := true
 	stats, err := dockerClient.ContainerStats(ctx, container.ID, stream)
 	if err != nil {
@@ -173,13 +182,20 @@ func collectContainerStats(ctx context.Context, dockerClient *client.Client, con
 				log.Printf("Error decoding stats for container %s: %v", container.ID, err)
 				return
 			}
+			var customStats ContainerStats
+			customStats.ID = containerStats.ID
+			customStats.Name = containerStats.Name
+			customStats.CpuPercent = float64(containerStats.CPUStats.CPUUsage.TotalUsage) / float64(containerStats.CPUStats.SystemUsage) * 100
+			customStats.MemoryUsage = containerStats.MemoryStats.Usage
+			customStats.MemoryLimit = containerStats.MemoryStats.Limit
+			customStats.MemoryPercent = float64(containerStats.MemoryStats.Usage) / float64(containerStats.MemoryStats.Limit) * 100
 
-			statsCh <- containerStats
+			statsCh <- customStats
 		}
 	}
 }
 
-func monitorContainers(dockerClient *client.Client, statsCh chan<- types.StatsJSON) {
+func monitorContainers(dockerClient *client.Client, statsCh chan<- ContainerStats) {
 	containerContexts := make(map[string]context.CancelFunc)
 
 	for {
@@ -220,7 +236,7 @@ func monitorContainers(dockerClient *client.Client, statsCh chan<- types.StatsJS
 }
 
 // <-chan means recieving
-func publishContainerStats(redisClient *redis.Client, statsCh <-chan types.StatsJSON) {
+func publishContainerStats(redisClient *redis.Client, statsCh <-chan ContainerStats) {
 	for stats := range statsCh {
 		statsJSON, err := json.Marshal(stats)
 		if err != nil {
@@ -242,7 +258,7 @@ func main() {
 	}
 	defer dockerClient.Close()
 
-	statsChan := make(chan types.StatsJSON)
+	statsChan := make(chan ContainerStats)
 	go publishContainerStats(redisClient, statsChan)
 	go monitorContainers(dockerClient, statsChan)
 	go publishHomepageData(dockerClient)
