@@ -330,16 +330,21 @@ $(document).ready(function () {
                             $(`#stats-name-${container.ID}`).text(container[attr]);
                             break;
                         case 'CpuPercent':
-                            $(`#stats-cpu-percent-${container.ID}`).text(container[attr]);
+                            let fixedCpuPercent = container[attr].toFixed(3);
+                            $(`#stats-cpu-percent-${container.ID}`).html(`<span style="padding-left: 25px">${fixedCpuPercent} %</span>`);
                             break;
                         case 'MemoryUsage':
-                            $(`#stats-memory-usage-${container.ID}`).text(container[attr]);
+                            // const sizeBytes = container[attr];
+                            let displaySize = convertBytes(container[attr]);
+                            $(`#stats-memory-usage-${container.ID}`).text(displaySize);
                             break;
                         case 'MemoryLimit':
-                            $(`#stats-memory-limit-${container.ID}`).text(container[attr]);
+                            let memLimit = convertBytes(container[attr]);
+                            $(`#stats-memory-limit-${container.ID}`).text(memLimit);
                             break;
                         case 'MemoryPercent':
-                            $(`#stats-memory-percent-${container.ID}`).text(container[attr]);
+                            let fixedMemPercent = container[attr].toFixed(3);
+                            $(`#stats-memory-percent-${container.ID}`).html(`<span style="padding-left: 25px">${fixedMemPercent} %</span>`);
                             break;
                     }
                 }
@@ -463,6 +468,18 @@ $(document).ready(function () {
         containerListSource.close();
         messagesSource.close();
         imageListSource.close();
+    }
+
+    function convertBytes(bytes){
+        const sizeMb = bytes / 1048576
+        const sizeGb = sizeMb / 1024
+        let displaySize;
+        if (sizeGb < 1) {
+            displaySize = `${sizeMb.toFixed(2)} MB`;
+        } else {
+            displaySize = `${sizeGb.toFixed(2)} GB`;
+        }
+        return displaySize;
     }
 
     // Close connections when the page is refreshed or closed
