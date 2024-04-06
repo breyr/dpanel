@@ -17,7 +17,6 @@ from helpers import (
     subscribe_to_channel,
     publish_message_data,
     ObjectType,
-    get_container_stats,
 )
 from logger import Logger
 from docker_utils import DockerManager
