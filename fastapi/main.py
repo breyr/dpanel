@@ -17,6 +17,7 @@ from helpers import (
     subscribe_to_channel,
     publish_message_data,
     ObjectType,
+    get_container_stats,
 )
 from logger import Logger
 from docker_utils import DockerManager
@@ -182,6 +183,11 @@ async def server_messages(req: Request):
 @app.get("/api/streams/imagelist")
 async def image_list(req: Request):
     return EventSourceResponse(subscribe_to_channel(req, "images_list", redis))
+
+
+@app.get("/api/streams/containermetrics")
+async def container_stat(req: Request):
+    return EventSourceResponse(subscribe_to_channel(req, "container_metrics", redis))
 
 
 @app.get("/api/containers/info/{container_id}")
