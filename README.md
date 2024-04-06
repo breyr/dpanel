@@ -18,7 +18,7 @@ Navigate to http://localhost:3000 on a browser.
 
 1. Clone the GitHub repo with ```git clone https://github.com/breyr/dpanel.git```.
 2. Navigate into the directory with ```cd dpanel```.
-3. Start the Docker containers with ```docker compose up --build```.
+3. Start the Docker containers with ```docker compose -f compose.prod.yaml up --build```.
 
 *You only have to append the ```--build``` flag when running for the first time.*
 
@@ -29,5 +29,3 @@ Ports used by each service:
 - Nginx: 3000
 - FastAPI: 5002
 - Reddis: 6379
-
-cron test :)

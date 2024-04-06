@@ -13,36 +13,19 @@ import aiofiles
 import os
 import json
 from helpers import (
-    ASYNC_DOCKER_CLIENT,
-    SYNC_DOCKER_CLIENT,
     convert_from_bytes,
-    pause_container,
     subscribe_to_channel,
     publish_message_data,
-    start_container,
-    stop_container,
-    kill_container,
-    restart_container,
-    resume_container,
-    delete_container,
-    delete_image,
-    pull_image,
     ObjectType,
     get_container_stats,
 )
-
-# setup logging for docker container
-import sys
-import logging
-
-logging.basicConfig(
-    stream=sys.stdout,
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
+from logger import Logger
+from docker_utils import DockerManager
 
 # Define global variables
 redis: Redis = None
+logger = Logger(__name__)
+docker_manager = DockerManager()
 
 app = FastAPI()
 
@@ -94,7 +77,7 @@ async def perform_action(
         tag = data.get("tag", "")
         error_ids_msgs = []
         success_ids_msgs = []
-        logging.info(
+        logger.info(
             f"\nRequest Data: {data}\nIds: {ids}\nImage to pull: {from_image}\nImage tag: {tag}\n"
         )
 
@@ -102,7 +85,7 @@ async def perform_action(
             id: str, publish_image: str = None, tag: str = None
         ):
             if object_type == ObjectType.CONTAINER:
-                container = await ASYNC_DOCKER_CLIENT.containers.get(id)
+                container = await docker_manager.async_client.containers.get(id)
                 res = await action(container)
             elif object_type == ObjectType.IMAGE:
                 # for pulling an image
@@ -211,29 +194,28 @@ async def container_stat(req: Request):
 def info(container_id: str):
     # get container information
     # this function does not need to be async because get() is not asynchronous
-    return ASYNC_DOCKER_CLIENT.containers.get(container_id=container_id).attrs
+    return docker_manager.async_client.containers.get(container_id=container_id).attrs
 
 
 @app.post("/api/system/prune")
 async def prune_system(req: Request):
     data = await req.json()
     objects_to_prune: List[str] = data["objectsToPrune"]
-    logging.info(f"Objects: {objects_to_prune}")
+    logger.info(f"Objects: {objects_to_prune}")
     try:
         res = {}
         for obj in objects_to_prune:
             if obj == "containers":
-                pruned_containers = SYNC_DOCKER_CLIENT.containers.prune()
+                pruned_containers = docker_manager.sync_client.containers.prune()
                 res["Containers"] = pruned_containers
             elif obj == "images":
-                pruned_images = SYNC_DOCKER_CLIENT.images.prune()
+                pruned_images = docker_manager.sync_client.images.prune()
                 res["Images"] = pruned_images
             elif obj == "volumes":
-                pruned_volumes = SYNC_DOCKER_CLIENT.volumes.prune()
+                pruned_volumes = docker_manager.sync_client.volumes.prune()
                 res["Volumes"] = pruned_volumes
             elif obj == "networks":
-                # Add your code for "Networks" here
-                pruned_networks = SYNC_DOCKER_CLIENT.networks.prune()
+                pruned_networks = docker_manager.sync_clientT.networks.prune()
                 res["Networks"] = pruned_networks
                 break
 
@@ -243,7 +225,7 @@ async def prune_system(req: Request):
         # res['networks'] -> list or None ['NetworksDeleted']
         async def schedule_messages(object_type: str, res: dict, redis):
             # get number of objects deleted
-            logging.info(f"Scheduling message for object: {object_type} after pruning")
+            logger.info(f"Scheduling message for object: {object_type} after pruning")
             num_deleted = (
                 0
                 if res[object_type][f"{object_type}Deleted"] is None
@@ -276,7 +258,7 @@ async def prune_system(req: Request):
 async def start_containers(req: Request):
     return await perform_action(
         req,
-        start_container,
+        docker_manager.start_container,
         ObjectType.CONTAINER,
         "Containers started",
         "Containers already started",
@@ -287,7 +269,7 @@ async def start_containers(req: Request):
 async def stop_containers(req: Request):
     return await perform_action(
         req,
-        stop_container,
+        docker_manager.stop_container,
         ObjectType.CONTAINER,
         "Containers stopped",
         "Containers already stopped",
@@ -298,7 +280,7 @@ async def stop_containers(req: Request):
 async def kill_containers(req: Request):
     return await perform_action(
         req,
-        kill_container,
+        docker_manager.kill_container,
         ObjectType.CONTAINER,
         "Containers killed",
         "Containers already killed",
@@ -309,7 +291,7 @@ async def kill_containers(req: Request):
 async def restart_containers(req: Request):
     return await perform_action(
         req,
-        restart_container,
+        docker_manager.restart_container,
         ObjectType.CONTAINER,
         "Containers restarted",
         "Containers already restarted",
@@ -320,7 +302,7 @@ async def restart_containers(req: Request):
 async def pause_containers(req: Request):
     return await perform_action(
         req,
-        pause_container,
+        docker_manager.pause_container,
         ObjectType.CONTAINER,
         "Containers paused",
         "Containers already paused",
@@ -331,7 +313,7 @@ async def pause_containers(req: Request):
 async def resume_containers(req: Request):
     return await perform_action(
         req,
-        resume_container,
+        docker_manager.resume_container,
         ObjectType.CONTAINER,
         "Containers resumed",
         "Containers already resumed",
@@ -342,7 +324,7 @@ async def resume_containers(req: Request):
 async def delete_containers(req: Request):
     return await perform_action(
         req,
-        delete_container,
+        docker_manager.delete_container,
         ObjectType.CONTAINER,
         "Containers deleted",
         "Containers already deleted",
@@ -353,7 +335,7 @@ async def delete_containers(req: Request):
 async def delete_images(req: Request):
     return await perform_action(
         req,
-        delete_image,
+        docker_manager.delete_image,
         ObjectType.IMAGE,
         success_msg="Images deleted",
         error_msg="Error, check if containers are running",
@@ -364,7 +346,7 @@ async def delete_images(req: Request):
 async def pull_images(req: Request):
     return await perform_action(
         req,
-        pull_image,
+        docker_manager.pull_image,
         ObjectType.IMAGE,
         success_msg="Image pulled",
         error_msg="Error",
@@ -403,7 +385,7 @@ async def upload_file(req: Request):
 @app.post("/api/compose/delete")
 async def delete_compose_file(req: Request):
     data = await req.json()
-    logging.info(f"File to delete: {data}")
+    logger.info(f"File to delete: {data}")
     file_to_delete = data.get("projectName")
     try:
         os.remove(f"./composefiles/{file_to_delete}.yaml")
@@ -433,7 +415,7 @@ async def run_compose_file(req: Request):
     project_name = file_to_run.split(".")[0]
     try:
         # create docker client
-        logging.info("Attempting to compose up")
+        logger.info("Attempting to compose up")
         docker = DockerClient(
             compose_files=[file_path], compose_project_name=project_name
         )
@@ -465,7 +447,7 @@ async def compose_down(req: Request):
     # read the project name from the Docker Compose file
     try:
         # create docker client
-        logging.info("Attempting to compose up")
+        logger.info("Attempting to compose up")
         docker = DockerClient(
             compose_files=[file_path], compose_project_name=project_name
         )
