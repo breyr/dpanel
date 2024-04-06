@@ -74,6 +74,7 @@ async def perform_action(
         ids = data.get("ids", [])
         from_image = data.get("image", "")
         tag = data.get("tag", "")
+        config = data.get("config", "")
         error_ids_msgs = []
         success_ids_msgs = []
         logger.info(
@@ -84,8 +85,13 @@ async def perform_action(
             id: str, publish_image: str = None, tag: str = None
         ):
             if object_type == ObjectType.CONTAINER:
-                container = await docker_manager.async_client.containers.get(id)
-                res = await action(container)
+                # if create a new container, have to pass config from request
+                if config:
+                    res = await action(config)
+                    logger.info(f"Result from creating new container")
+                else:
+                    container = await docker_manager.async_client.containers.get(id)
+                    res = await action(container)
             elif object_type == ObjectType.IMAGE:
                 # for pulling an image
                 if publish_image:
@@ -99,6 +105,8 @@ async def perform_action(
         # create list of tasks and use asyncio.gather to run them concurrently
         if ids:
             tasks.extend([perform_action_and_handle_error(id) for id in ids])
+        if config:
+            tasks.append(perform_action_and_handle_error(None))
         if from_image:
             tasks.append(perform_action_and_handle_error(None, from_image, tag))
 
@@ -188,7 +196,7 @@ async def image_list(req: Request):
 def info(container_id: str):
     # get container information
     # this function does not need to be async because get() is not asynchronous
-    return docker_manager.async_client.containers.get(container_id=container_id).attrs
+    return docker_manager.sync_client.containers.get(container_id=container_id).attrs
 
 
 @app.post("/api/system/prune")
@@ -246,6 +254,17 @@ async def prune_system(req: Request):
     except DockerError as e:
         await publish_message_data("API error, please try again", "Error", redis=redis)
         return JSONResponse(content={"message": "API error"}, status_code=400)
+
+
+@app.post("/api/containers/run")
+async def run_container(req: Request):
+    return await perform_action(
+        req,
+        docker_manager.run_container,
+        ObjectType.CONTAINER,
+        "Container created and running",
+        "Container failed to create and run",
+    )
 
 
 @app.post("/api/containers/start")

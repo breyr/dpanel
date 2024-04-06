@@ -16,8 +16,24 @@ class DockerManager:
         self.logger = Logger(__name__)
 
     async def get_container_details(self, container: DockerContainer):
-        self.logger.info(f"Attempting to get details for {container}")
         return await container.show()
+
+    async def run_container(self, config):
+        # attempt to create and run a container based on the config
+        try:
+            self.logger.info(f"Attempting to create and run new container")
+            container = self.sync_client.containers.run(
+                image=config["image"],
+                name=config.get("containerName"),
+                volumes=config.get("volumes"),
+                ports=config.get("ports"),
+                environment=config.get("environment"),
+                detach=True,
+            )
+            self.logger.info(f"Created and ran new container: {container}")
+        except DockerError as e:
+            return {"type": "error", "statusCode": e.status, "message": e.message}
+        return {"type": "success", "objectId": container.id}
 
     async def pause_container(self, container: DockerContainer):
         container_details = await self.get_container_details(container)
@@ -93,7 +109,7 @@ class DockerManager:
                         f"Attempting to stop running container: {container}"
                     )
                     await container.stop()
-                    self.logger.info(f"Stoped running container: {container}")
+                    self.logger.info(f"Stopped running container: {container}")
             await container.delete()
             self.logger.info(f"Deleted container: {container}")
         except DockerError as e:
