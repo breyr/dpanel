@@ -29,6 +29,7 @@ $(document).ready(function () {
     // table spinners
     $("#containers-loading").show();
     $("#images-loading").show();
+    $("#stats-loading").show();
 
     // new container
     // Add a delete button to each row
@@ -298,6 +299,89 @@ $(document).ready(function () {
     }
     initImageListES();
 
+    var containerStatsSource = null;
+    function initContainerStatsES() {
+        if (containerStatsSource == null || containerStatsSource.readyState == 2) {
+            // container metrics are being populated individually instead of all at once
+            // Go is publishing all individual container stats as messages to container_metrics channel
+            // so that means each message HAS an id for a container and stats for ONLY that container
+            // this is why containermetrics doesnt need to use id
+            containerStatsSource = new EventSource('http://localhost:5002/api/streams/containermetrics');//how come /containermetrics doesnt have the id
+            containerStatsSource.onerror = function (event) {
+                if (containerStatsSource.readyState == 2) {
+                    // retry connection to ES
+                    setTimeout(initContainerStatsES, 5000);
+                }
+            }
+        }
+
+        let previousStateStats = {};
+        let firstLoadStatsList = true;
+        const statsTbody = $("#stats-tbody");
+
+        containerStatsSource.onmessage = function (event) {
+            const container = JSON.parse(event.data);
+            console.log(container);
+            let tr = statsTbody.find('#stats-row-' + container.ID);
+            if (!tr.length) {
+                // If the row does not exist, create it
+                tr = $("<tr>").attr('id', 'stats-row-' + container.ID);
+                tr.append($("<td>").html('<input type="checkbox" class="tr-stats-checkbox" value="' + container.ID + '" name="container"> <span class="spinner-border spinner-border-sm text-warning d-none" role="status" aria-hidden="true"></span>'));
+                tr.append($("<td>").attr('id', 'stats-name-' + container.ID));
+                tr.append($("<td>").attr('id', 'stats-cpu-percent-' + container.ID));
+                tr.append($("<td>").attr('id', 'stats-memory-usage-' + container.ID));
+                tr.append($("<td>").attr('id', 'stats-memory-limit-' + container.ID));
+                tr.append($("<td>").attr('id', 'stats-memory-percent-' + container.ID));
+                // first load, all rows are new so append in order the data was sent
+                // if its the first load, append everything
+                // if its a newly created container, will have to prepend
+                if (firstLoadStatsList) {
+                    statsTbody.append(tr);
+                } else {
+                    statsTbody.prepend(tr);
+                }
+            }
+            // Define the attributes to be updated
+            const attributes = ['Name', 'CpuPercent', 'MemoryUsage', 'MemoryLimit', 'MemoryPercent'];
+            attributes.forEach(attr => {
+                // If the attribute has changed
+                if (previousStateStats[container.ID]?.[attr] !== container[attr]) {
+                    switch (attr) {
+                        case 'Name':
+                            $(`#stats-name-${container.ID}`).text(container[attr]);
+                            break;
+                        case 'CpuPercent':
+                            let fixedCpuPercent = container[attr].toFixed(3);
+                            $(`#stats-cpu-percent-${container.ID}`).html(`<span style="padding-left: 25px">${fixedCpuPercent} %</span>`);
+                            break;
+                        case 'MemoryUsage':
+                            // const sizeBytes = container[attr];
+                            let displaySize = convertBytes(container[attr]);
+                            $(`#stats-memory-usage-${container.ID}`).text(displaySize);
+                            break;
+                        case 'MemoryLimit':
+                            let memLimit = convertBytes(container[attr]);
+                            $(`#stats-memory-limit-${container.ID}`).text(memLimit);
+                            break;
+                        case 'MemoryPercent':
+                            let fixedMemPercent = container[attr].toFixed(3);
+                            $(`#stats-memory-percent-${container.ID}`).html(`<span style="padding-left: 25px">${fixedMemPercent} %</span>`);
+                            break;
+                    }
+                }
+            });
+            // Store the current state of the container for the next update
+            previousStateStats[container.ID] = container;
+
+            if (firstLoadStatsList) {
+                firstLoadStatsList = false;
+            }
+            $("#stats-loading").hide();
+        };
+    }
+    initContainerStatsES()
+
+
 
 
     // handle file uploading
@@ -405,7 +489,18 @@ $(document).ready(function () {
         containerListSource.close();
         messagesSource.close();
         imageListSource.close();
-        composeFilesSource.close();
+    }
+
+    function convertBytes(bytes){
+        const sizeMb = bytes / 1048576
+        const sizeGb = sizeMb / 1024
+        let displaySize;
+        if (sizeGb < 1) {
+            displaySize = `${sizeMb.toFixed(2)} MB`;
+        } else {
+            displaySize = `${sizeGb.toFixed(2)} GB`;
+        }
+        return displaySize;
     }
 
     // Close connections when the page is refreshed or closed
