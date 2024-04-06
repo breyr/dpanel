@@ -31,6 +31,27 @@ $(document).ready(function () {
     $("#images-loading").show();
     $("#stats-loading").show();
 
+    // new container
+    // Add a delete button to each row
+    $("#env-container .row").each(function () {
+        $(this).append(`<div class="col"><button class="btn btn-danger delete-row"><i
+        class="bi bi-trash-fill"></i></button></div>`);
+    });
+
+    // Event handler for the delete button
+    $("#env-container").on('click', '.delete-row', function () {
+        $(this).closest('.row').remove();
+    });
+
+    // Event handler for the add row button
+    let rowCounter = 0;
+
+    $("#env-container").on('click', '.add-row', function () {
+        rowCounter++;
+        $("#env-container").append(`<div class="row g-3"><div class="col"><input type="text" id="key-input-' + ${rowCounter} + '" class="form-control" placeholder="KEY"></div><div class="col"><input type="text" id="value-input-' + ${rowCounter} + '" class="form-control" placeholder="VALUE"></div><div class="col"><button class="btn btn-danger delete-row"><i
+        class="bi bi-trash-fill"></i></button></div></div>`);
+    });
+
     // Get event sources
     var containerListSource = null;
     function initContainerListES() {
@@ -502,6 +523,75 @@ $(document).ready(function () {
                 $(this).prop('checked', false);
             });
         }
+    });
+
+    // handle creating a container
+    $('#create-container-btn').on('click', function () {
+        // image to use/pull
+        const image = $('#run-image').val();
+        const tag = $('#run-tag').val() === '' ? ':latest' : $('#run-tag').val();
+        // container name
+        const containerName = $('#container-name').val();
+        // ports
+        const containerPort = $('#container-port').val();
+        const hostPort = $('#host-port').val();
+        const selectedProtocol = $('#protocol').val();
+        // volumes - NOT BIND MOUNTS
+        const volumeName = $('#volume-name').val();
+        const volumeTarget = $('#volume-bind').val();
+        const volumeMode = $('#volume-mode').val();
+        // env variables
+        let envArray = [];
+        $("#env-container .row").each(function () {
+            let key = $(this).find(".form-control").first().val();
+            let value = $(this).find(".form-control").last().val();
+            envArray.push(key + "=" + value);
+        });
+
+        let createContainerReq = {
+            'image': image + tag
+        };
+
+        if (containerName) {
+            createContainerReq.containerName = containerName;
+        }
+
+        if (envArray) {
+            createContainerReq.environment = envArray;
+        }
+
+        if (containerPort && hostPort && selectedProtocol) {
+            const formatContainerPort = containerPort + '/' + selectedProtocol;
+            createContainerReq.ports = {
+                [formatContainerPort]: hostPort
+            };
+        }
+
+        if (volumeName && volumeTarget && volumeMode) {
+            createContainerReq.volumes = {
+                [volumeName]: {
+                    'bind': volumeTarget,
+                    'mode': volumeMode
+                }
+            };
+        }
+
+        // show spinner and disable button
+        $('#run-container-spinner').toggleClass('d-none');
+        $('#create-container-btn').addClass('disabled');
+        // ajax request
+        $.ajax({
+            url: 'http://localhost:5002/api/containers/run',
+            type: 'post',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                'config': createContainerReq
+            }),
+            success: function (res) {
+                $('#run-container-spinner').toggleClass('d-none');
+                $('#create-container-btn').removeClass('disabled');
+            }
+        })
     });
 
     // handle prune check box

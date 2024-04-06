@@ -101,19 +101,61 @@
                                                     aria-label="Close"></button>
                                             </div>
                                             <div class="modal-body">
-                                                <form action="" method="">
-                                                    <div class="mb-3">
-                                                        <label for="image" class="form-label">Image</label>
-                                                        <input type="text" class="form-control" id="image"
-                                                            aria-describedby="imageHelp" required>
-                                                        <div id="imageHelp" class="form-text">If your image is not found
-                                                            on your
-                                                            device, it will
-                                                            be
-                                                            automatically pulled using tage :latest</div>
+                                                <div class="mb-3">
+                                                    <div class="input-group">
+                                                        <input type="text" id="run-image" aria-label="run-image"
+                                                            class="form-control required" placeholder="image name"
+                                                            required>
+                                                        <span class="input-group-text">:</span>
+                                                        <input type="text" id="run-tag" aria-label="run-tag"
+                                                            class="form-control" placeholder="latest">
                                                     </div>
-                                                    <input type="submit" class="btn btn-success" value="Create" />
-                                                </form>
+                                                </div>
+                                                <input type="text" id="container-name" placeholder="Container name">
+                                                <input type="text" id="container-port" name="container-port"
+                                                    placeholder="container port i.e. 2222">
+                                                <input type="text" id="host-port" name="host-port"
+                                                    placeholder="host port i.e. 80">
+                                                <br>
+                                                <label for="protocol">Protocol</label>
+                                                <select id="protocol" name="protocol">
+                                                    <option selected></option>
+                                                    <option value="tcp">TCP</option>
+                                                    <option value="udp">UDP</option>
+                                                    <option value="sctp">SCTP</option>
+                                                </select>
+                                                <br>
+                                                <label>Environment</label>
+                                                <div id="env-container">
+                                                    <button class="btn btn-outline-primary add-row">Add Row</button>
+                                                    <div class="row g-3">
+                                                        <div class="col">
+                                                            <input type="text" class="form-control" placeholder="KEY">
+                                                        </div>
+                                                        <div class="col">
+                                                            <input type="text" class="form-control" placeholder="VALUE">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <label for="volumes">Volumes</label>
+                                                <br>
+                                                <small>Note: bind mounts not supported</small>
+                                                <div id="voumes-config-container">
+                                                    <input type="text" id="volume-name" placeholder="Volume name">
+                                                    <input type="text" id="volume-bind"
+                                                        placeholder="Volume bind (target)">
+                                                    <label for="volume-mode">Volume mode:</label>
+                                                    <select id="volume-mode" name="volume-mode">
+                                                        <option selected></option>
+                                                        <option value="ro">Read-only</option>
+                                                        <option value="rw">Read-write</option>
+                                                    </select>
+                                                </div>
+                                                <button type="submit" class="btn btn-success" id="create-container-btn">
+                                                    <span class="spinner-border spinner-border-sm d-none"
+                                                        aria-hidden="true" id="run-container-spinner"></span>
+                                                    <span class="visually-hidden" role="status">Loading...</span>
+                                                    Create</button>
                                             </div>
                                         </div>
                                     </div>
