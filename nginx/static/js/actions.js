@@ -1,6 +1,6 @@
 function getInfo(containerId) {
   $.ajax({
-    url: `https://fastapi.adamspera.dev/api/containers/info/${containerId}`,
+    url: `${window.location}api/containers/info/${containerId}`,
     type: 'GET',
     success: function (data) {
       // Create a new Blob from the JSON string
@@ -26,7 +26,7 @@ function getPortBindings(portBindings) {
   var result = "";
   $.each(portBindings, function (i, port) {
     if (port.PublicPort) {
-      result += '<a href="https://localhost:' + port.PublicPort + '" target="_blank">' + port.PrivatePort + ':' + port.PublicPort + ' <i class="bi bi-box-arrow-up-right"></i></a> ';
+      result += '<p' + port.PrivatePort + ':' + port.PublicPort + '</p>';
     }
   });
   return result;
@@ -58,7 +58,7 @@ function performActionContainer(action, actionBtnId) {
   toggleSpinnerAndButtonRow('container', actionBtnId, false);
 
   $.ajax({
-    url: `https://fastapi.adamspera.dev/api/containers/${action}`,
+    url: `${window.location}api/containers/${action}`,
     type: 'POST',
     contentType: 'application/json',
     data: JSON.stringify({ 'ids': checkedIds }),
@@ -87,7 +87,7 @@ function performActionImage(action, actionBtnId) {
       // shows spinners for image rows
       toggleSpinnerAndButtonRow('image', actionBtnId, false);
       $.ajax({
-        url: `https://fastapi.adamspera.dev/api/images/${action}`,
+        url: `${window.location}api/images/${action}`,
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ 'ids': checkedIds }),
@@ -115,7 +115,7 @@ function performActionImage(action, actionBtnId) {
         $alert = `<p class='text-warning mt-2' id='${uniqueId}'><i class="bi bi-info-circle"></i> Pulling ${image}:${tag}</p>`;
         $('#pull-validation').append($alert);
         $.ajax({
-          url: `https://fastapi.adamspera.dev/api/images/${action}`,
+          url: `${window.location}api/images/${action}`,
           type: 'POST',
           contentType: 'application/json',
           data: JSON.stringify({ 'image': image, 'tag': tag }),
@@ -149,7 +149,7 @@ function performActionCompose(action, projectName, event) {
   $(clickedButton).find(".spinner-border").toggleClass('d-none');
   $(clickedButton).addClass('disabled');
   $.ajax({
-    url: `https://fastapi.adamspera.dev/api/compose/${action}`,
+    url: `${window.location}api/compose/${action}`,
     method: "post",
     data: JSON.stringify({
       projectName
