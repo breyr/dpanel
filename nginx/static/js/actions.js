@@ -26,7 +26,7 @@ function getPortBindings(portBindings) {
   var result = "";
   $.each(portBindings, function (i, port) {
     if (port.PublicPort) {
-      result += '<p' + port.PrivatePort + ':' + port.PublicPort + '</p>';
+      result += port.PrivatePort + ':' + port.PublicPort;
     }
   });
   return result;
