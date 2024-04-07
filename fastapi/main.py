@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from sse_starlette import EventSourceResponse
 from fastapi.requests import Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import aioredis
 from aioredis import Redis
@@ -28,7 +28,7 @@ logger = Logger(__name__)
 docker_manager = DockerManager()
 
 app = FastAPI()
-app.mount("/", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 origins = ["http://localhost:3000"]
 
@@ -163,6 +163,10 @@ async def perform_action(
 
 
 # ======== ENDPOINTS =========
+
+@app.get("/")
+async def root():
+    return FileResponse("static/index.html")
 
 
 @app.get("/api/streams/composefiles")
