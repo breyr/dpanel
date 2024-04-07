@@ -20,7 +20,6 @@ from helpers import (
 )
 from logger import Logger
 from docker_utils import DockerManager
-from fastapi.staticfiles import StaticFiles
 
 # Define global variables
 redis: Redis = None
@@ -163,10 +162,6 @@ async def perform_action(
 
 
 # ======== ENDPOINTS =========
-
-@app.get("/")
-async def root():
-    return FileResponse("static/index.html")
 
 
 @app.get("/api/streams/composefiles")
