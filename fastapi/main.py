@@ -12,7 +12,6 @@ import asyncio
 import aiofiles
 import os
 import json
-import httpx
 from helpers import (
     convert_from_bytes,
     subscribe_to_channel,
@@ -21,6 +20,7 @@ from helpers import (
 )
 from logger import Logger
 from docker_utils import DockerManager
+from fastapi.staticfiles import StaticFiles
 
 # Define global variables
 redis: Redis = None
@@ -163,11 +163,7 @@ async def perform_action(
 
 # ======== ENDPOINTS =========
 
-@app.get("/")
-async def root():
-    async with httpx.AsyncClient() as client:
-        response = await client.get("http://localhost:3000")
-        return response.text
+app.mount("/", StaticFiles(directory="nginx"), name="nginx")
 
 @app.get("/api/streams/composefiles")
 async def list_files():
