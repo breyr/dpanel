@@ -8,6 +8,8 @@ services:
     restart: on-failure
     ports:
       - 3000:3000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
   pubsub:
     build:
       context: ./pubsub-go
@@ -16,10 +18,11 @@ services:
     restart: on-failure
     depends_on:
       - redis
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
   fastapi:
     build:
       context: ./fastapi
-      dockerfile: Dockerfile.prod
     ports:
       - 5002:5002
     volumes:
@@ -28,7 +31,11 @@ services:
     restart: on-failure
     depends_on:
       - redis
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
   redis:
     image: redis:latest
     ports:
       - 6379:6379
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
