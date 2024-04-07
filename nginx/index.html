@@ -105,16 +105,20 @@
                                                 <!-- Name -->
                                                 <div class="mb-3">
                                                     <label for="container-name" class="form-label">Name</label>
-                                                    <input type="text" id="container-name" class="form-control" placeholder="name">
+                                                    <input type="text" id="container-name" class="form-control"
+                                                        placeholder="name">
                                                 </div>
 
                                                 <!-- Image -->
                                                 <div class="mb-3" style="margin-bottom: 25px !important;">
                                                     <label for="run-image" class="form-label">Image</label>
                                                     <div class="input-group">
-                                                        <input type="text" id="run-image" aria-label="run-image" class="form-control required" placeholder="image name" required>
+                                                        <input type="text" id="run-image" aria-label="run-image"
+                                                            class="form-control required" placeholder="image name"
+                                                            required>
                                                         <span class="input-group-text">:</span>
-                                                        <input type="text" id="run-tag" aria-label="run-tag" class="form-control" placeholder="latest">
+                                                        <input type="text" id="run-tag" aria-label="run-tag"
+                                                            class="form-control" placeholder="latest">
                                                     </div>
                                                 </div>
 
@@ -122,26 +126,38 @@
                                                 <div class="accordion" id="portsAccordion">
                                                     <div class="accordion-item">
                                                         <h2 class="accordion-header" id="portsHeading">
-                                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#portsCollapse" aria-expanded="false" aria-controls="portsCollapse">
+                                                            <button class="accordion-button collapsed" type="button"
+                                                                data-bs-toggle="collapse"
+                                                                data-bs-target="#portsCollapse" aria-expanded="false"
+                                                                aria-controls="portsCollapse">
                                                                 Networking
                                                             </button>
                                                         </h2>
-                                                        <div id="portsCollapse" class="accordion-collapse collapse" aria-labelledby="portsHeading" data-bs-parent="#portsAccordion">
+                                                        <div id="portsCollapse" class="accordion-collapse collapse"
+                                                            aria-labelledby="portsHeading"
+                                                            data-bs-parent="#portsAccordion">
                                                             <div class="accordion-body">
                                                                 <!-- Ports -->
                                                                 <div class="mb-3">
-                                                                    <label for="container-port" class="form-label">Container Port</label>
-                                                                    <input type="text" id="container-port" name="container-port" class="form-control" placeholder="Ex. 2222">
+                                                                    <label for="container-port"
+                                                                        class="form-label">Container Port</label>
+                                                                    <input type="text" id="container-port"
+                                                                        name="container-port" class="form-control"
+                                                                        placeholder="Ex. 2222">
                                                                 </div>
                                                                 <div class="mb-3">
-                                                                    <label for="host-port" class="form-label">Host Port</label>
-                                                                    <input type="text" id="host-port" name="host-port" class="form-control" placeholder="Ex. 80">
+                                                                    <label for="host-port" class="form-label">Host
+                                                                        Port</label>
+                                                                    <input type="text" id="host-port" name="host-port"
+                                                                        class="form-control" placeholder="Ex. 80">
                                                                 </div>
 
                                                                 <!-- Protocol -->
                                                                 <div class="mb-3">
-                                                                    <label for="protocol" class="form-label">Protocol</label>
-                                                                    <select id="protocol" name="protocol" class="form-select">
+                                                                    <label for="protocol"
+                                                                        class="form-label">Protocol</label>
+                                                                    <select id="protocol" name="protocol"
+                                                                        class="form-select">
                                                                         <option selected></option>
                                                                         <option value="tcp">TCP</option>
                                                                         <option value="udp">UDP</option>
@@ -158,17 +174,26 @@
                                                 <div class="accordion" id="environmentAccordion">
                                                     <div class="accordion-item">
                                                         <h2 class="accordion-header" id="environmentHeading">
-                                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#environmentCollapse" aria-expanded="false" aria-controls="environmentCollapse">
+                                                            <button class="accordion-button collapsed" type="button"
+                                                                data-bs-toggle="collapse"
+                                                                data-bs-target="#environmentCollapse"
+                                                                aria-expanded="false"
+                                                                aria-controls="environmentCollapse">
                                                                 Environment
                                                             </button>
                                                         </h2>
-                                                        <div id="environmentCollapse" class="accordion-collapse collapse" aria-labelledby="environmentHeading" data-bs-parent="#environmentAccordion">
+                                                        <div id="environmentCollapse"
+                                                            class="accordion-collapse collapse"
+                                                            aria-labelledby="environmentHeading"
+                                                            data-bs-parent="#environmentAccordion">
                                                             <div class="accordion-body">
                                                                 <!-- Environment -->
                                                                 <div class="mb-3">
                                                                     <label class="form-label">Environment</label>
                                                                     <div id="env-container">
-                                                                        <label class="btn btn-outline-primary add-row mb-2">Add pair</label>
+                                                                        <label
+                                                                            class="btn btn-outline-primary add-row mb-2">Add
+                                                                            pair</label>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -181,24 +206,35 @@
                                                 <div class="accordion" id="volumeAccordion">
                                                     <div class="accordion-item">
                                                         <h2 class="accordion-header" id="volumeHeading">
-                                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#volumeCollapse" aria-expanded="false" aria-controls="volumeCollapse">
+                                                            <button class="accordion-button collapsed" type="button"
+                                                                data-bs-toggle="collapse"
+                                                                data-bs-target="#volumeCollapse" aria-expanded="false"
+                                                                aria-controls="volumeCollapse">
                                                                 Volumes
                                                             </button>
                                                         </h2>
-                                                        <div id="volumeCollapse" class="accordion-collapse collapse" aria-labelledby="volumeHeading" data-bs-parent="#volumeAccordion">
+                                                        <div id="volumeCollapse" class="accordion-collapse collapse"
+                                                            aria-labelledby="volumeHeading"
+                                                            data-bs-parent="#volumeAccordion">
                                                             <div class="accordion-body">
                                                                 <!-- Volumes -->
                                                                 <div class="mb-3">
-                                                                    <label for="volume-name" class="form-label">Volume Name</label>
-                                                                    <input type="text" id="volume-name" class="form-control" placeholder="volume name">
+                                                                    <label for="volume-name" class="form-label">Volume
+                                                                        Name</label>
+                                                                    <input type="text" id="volume-name"
+                                                                        class="form-control" placeholder="volume name">
                                                                 </div>
                                                                 <div class="mb-3">
-                                                                    <label for="volume-bind" class="form-label">Volume Bind</label>
-                                                                    <input type="text" id="volume-bind" class="form-control" placeholder="volume bind">
+                                                                    <label for="volume-bind" class="form-label">Volume
+                                                                        Bind</label>
+                                                                    <input type="text" id="volume-bind"
+                                                                        class="form-control" placeholder="volume bind">
                                                                 </div>
                                                                 <div class="mb-3">
-                                                                    <label for="volume-mode" class="form-label">Volume Mode</label>
-                                                                    <select id="volume-mode" name="volume-mode" class="form-select">
+                                                                    <label for="volume-mode" class="form-label">Volume
+                                                                        Mode</label>
+                                                                    <select id="volume-mode" name="volume-mode"
+                                                                        class="form-select">
                                                                         <option selected></option>
                                                                         <option value="ro">Read-only</option>
                                                                         <option value="rw">Read-write</option>
@@ -211,7 +247,8 @@
                                                 <br>
 
                                                 <button type="submit" class="btn btn-success" id="create-container-btn">
-                                                    <span class="spinner-border spinner-border-sm d-none" aria-hidden="true" id="run-container-spinner"></span>
+                                                    <span class="spinner-border spinner-border-sm d-none"
+                                                        aria-hidden="true" id="run-container-spinner"></span>
                                                     <span class="visually-hidden" role="status">Loading...</span>
                                                     Create
                                                 </button>
@@ -319,7 +356,7 @@
                     data-bs-target="#statisticsDetails" aria-expanded="false" aria-controls="statisticsDetails">
                     <div>
                         <i class="bi bi-graph-up me-2"></i>
-                        <span class="page-title">Stat Visualizer</span>
+                        <span class="page-title">Live Stats</span>
                     </div>
                     <i class="bi bi-chevron-down"></i>
                 </div>
@@ -328,9 +365,6 @@
                     <section class="flex-grow-1">
                         <table class="table">
                             <thead class="table-primary">
-                                <th style="width:50px;"><input type="checkbox" class="me-2"
-                                        id="select-all-image" />
-                                </th>
                                 <th scope="col">Name</th>
                                 <th scope="col">CPU %</th>
                                 <th scope="col">Memory Usage</th>
@@ -340,8 +374,7 @@
                             <tbody id="stats-tbody">
                             </tbody>
                         </table>
-                        <div id="stats-loading" style="display: none; color: rgba(0, 0, 0, 0.2);"
-                            class="text-center">
+                        <div id="stats-loading" style="display: none; color: rgba(0, 0, 0, 0.2);" class="text-center">
                             <div class="spinner-border text-info" role="status">
                                 <span class="sr-only">Loading...</span>
                             </div>

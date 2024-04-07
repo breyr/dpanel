@@ -321,12 +321,15 @@ $(document).ready(function () {
 
         containerStatsSource.onmessage = function (event) {
             const container = JSON.parse(event.data);
-            console.log(container);
+            if (container['Message']) {
+                // delete row and return 
+                $("#stats-row-" + container.ID).remove();
+                return;
+            }
             let tr = statsTbody.find('#stats-row-' + container.ID);
             if (!tr.length) {
                 // If the row does not exist, create it
                 tr = $("<tr>").attr('id', 'stats-row-' + container.ID);
-                tr.append($("<td>").html('<input type="checkbox" class="tr-stats-checkbox" value="' + container.ID + '" name="container"> <span class="spinner-border spinner-border-sm text-warning d-none" role="status" aria-hidden="true"></span>'));
                 tr.append($("<td>").attr('id', 'stats-name-' + container.ID));
                 tr.append($("<td>").attr('id', 'stats-cpu-percent-' + container.ID));
                 tr.append($("<td>").attr('id', 'stats-memory-usage-' + container.ID));
@@ -352,7 +355,7 @@ $(document).ready(function () {
                             break;
                         case 'CpuPercent':
                             let fixedCpuPercent = container[attr].toFixed(3);
-                            $(`#stats-cpu-percent-${container.ID}`).html(`<span style="padding-left: 25px">${fixedCpuPercent} %</span>`);
+                            $(`#stats-cpu-percent-${container.ID}`).html(`<span>${fixedCpuPercent} %</span>`);
                             break;
                         case 'MemoryUsage':
                             // const sizeBytes = container[attr];
@@ -365,7 +368,7 @@ $(document).ready(function () {
                             break;
                         case 'MemoryPercent':
                             let fixedMemPercent = container[attr].toFixed(3);
-                            $(`#stats-memory-percent-${container.ID}`).html(`<span style="padding-left: 25px">${fixedMemPercent} %</span>`);
+                            $(`#stats-memory-percent-${container.ID}`).html(`<span>${fixedMemPercent} %</span>`);
                             break;
                     }
                 }
@@ -551,7 +554,7 @@ $(document).ready(function () {
         });
 
         let createContainerReq = {
-            'image': image + ':' +  tag
+            'image': image + ':' + tag
         };
 
         if (containerName) {
@@ -590,6 +593,10 @@ $(document).ready(function () {
                 'config': createContainerReq
             }),
             success: function (res) {
+                $('#run-container-spinner').toggleClass('d-none');
+                $('#create-container-btn').removeClass('disabled');
+            },
+            error: function (res) {
                 $('#run-container-spinner').toggleClass('d-none');
                 $('#create-container-btn').removeClass('disabled');
             }

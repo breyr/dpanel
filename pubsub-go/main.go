@@ -42,6 +42,11 @@ type ContainerStats struct {
 	MemoryPercent float64
 }
 
+type DeletionMessage struct {
+	ID      string
+	Message string
+}
+
 // Package level variables accessible by all functions
 // Good to keep up here if the variable doesnt need to be modified
 var ctx = context.Background()
@@ -228,6 +233,20 @@ func monitorContainers(dockerClient *client.Client, statsCh chan<- ContainerStat
 				log.Printf("Canceling context for %s", id)
 				cancel()
 				delete(containerContexts, id)
+				// publish message with id and cancelled, used to delete rows of container stats for those deleted
+				msg := DeletionMessage{
+					ID:      id,
+					Message: "deleted",
+				}
+				msgJSON, err := json.Marshal(msg)
+				if err != nil {
+					log.Printf("Failed to marshal container stats to JSON: %v", err)
+					return
+				}
+				err = redisClient.Publish("container_metrics", msgJSON).Err()
+				if err != nil {
+					log.Printf("Error publishing container stats to reids: %v", err)
+				}
 			}
 		}
 
