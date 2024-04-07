@@ -531,7 +531,7 @@ $(document).ready(function () {
     $('#create-container-btn').on('click', function () {
         // image to use/pull
         const image = $('#run-image').val();
-        const tag = $('#run-tag').val() === '' ? ':latest' : $('#run-tag').val();
+        const tag = $('#run-tag').val() === '' ? 'latest' : $('#run-tag').val();
         // container name
         const containerName = $('#container-name').val();
         // ports
@@ -551,7 +551,7 @@ $(document).ready(function () {
         });
 
         let createContainerReq = {
-            'image': image + tag
+            'image': image + ':' +  tag
         };
 
         if (containerName) {
