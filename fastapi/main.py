@@ -12,6 +12,7 @@ import asyncio
 import aiofiles
 import os
 import json
+import httpx
 from helpers import (
     convert_from_bytes,
     subscribe_to_channel,
@@ -162,6 +163,11 @@ async def perform_action(
 
 # ======== ENDPOINTS =========
 
+@app.get("/")
+async def root():
+    async with httpx.AsyncClient() as client:
+        response = await client.get("http://localhost:3000")
+        return response.text
 
 @app.get("/api/streams/composefiles")
 async def list_files():
