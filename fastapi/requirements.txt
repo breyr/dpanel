@@ -8,4 +8,3 @@ docker
 python-multipart
 aiofiles
 python-on-whales
-httpx
