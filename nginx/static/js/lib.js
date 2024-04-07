@@ -48,7 +48,7 @@ $(document).ready(function () {
 
     $("#env-container").on('click', '.add-row', function () {
         rowCounter++;
-        $("#env-container").append(`<div class="row g-3"><div class="col"><input type="text" id="key-input-' + ${rowCounter} + '" class="form-control" placeholder="KEY"></div><div class="col"><input type="text" id="value-input-' + ${rowCounter} + '" class="form-control" placeholder="VALUE"></div><div class="col"><button class="btn btn-danger delete-row"><i
+        $("#env-container").append(`<div class="row g-3" style="margin-bottom: 5px !important"><div class="col"><input type="text" id="key-input-' + ${rowCounter} + '" class="form-control" placeholder="KEY"></div><div class="col"><input type="text" id="value-input-' + ${rowCounter} + '" class="form-control" placeholder="VALUE"></div><div class="col"><button class="btn btn-danger delete-row"><i
         class="bi bi-trash-fill"></i></button></div></div>`);
     });
 
@@ -446,27 +446,29 @@ $(document).ready(function () {
             data.files.forEach(fileName => {
                 if (!composeFilesState.has(fileName)) {
                     composeFilesState.add(fileName);
-                    const newCard = `<div class="compose-file d-flex justify-content-center align-items-center" id="${fileName}">
-                            <p>${fileName}</p>
-                            <div
-                                class="hover-div d-flex flex-column justify-content-center align-items-center">
-                                <button class="btn btn-primary mb-2" id="up-compose-btn-${fileName}">
-                                    <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
-                                    <span class="visually-hidden" role="status">Loading...</span>
-                                    Up
-                                </button>
-                                <button class="btn btn-danger mb-2" id="down-compose-btn-${fileName}">
-                                    <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
-                                    <span class="visually-hidden" role="status">Loading...</span>
-                                    Down
-                                </button>
-                                <button class="btn btn-secondary" id="delete-compose-btn-${fileName}">
-                                    <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
-                                    <span class="visually-hidden" role="status">Loading...</span>
-                                    <i class="bi bi-trash-fill"></i>
-                                </button>
-                            </div>
-                        </div>`;
+                    const newCard = `
+                    <div class="compose-file d-flex justify-content-center align-items-center flex-column" id="${fileName}">
+                        <div style="display: flex; align-items: center; height: 100%;">
+                        <p style="margin: 0px !important">${fileName}</p>
+                        </div>
+                        <div class="hover-div d-flex justify-content-around align-items-center">
+                            <button class="btn btn-primary mb-2 compose-button" id="up-compose-btn-${fileName}" >
+                                <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
+                                <span class="visually-hidden" role="status">Loading...</span>
+                                Up
+                            </button>
+                            <button class="btn btn-danger mb-2 compose-button" id="down-compose-btn-${fileName}">
+                                <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
+                                <span class="visually-hidden" role="status">Loading...</span>
+                                Down
+                            </button>
+                            <button class="btn btn-secondary mb-2 compose-button" id="delete-compose-btn-${fileName}">
+                                <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
+                                <span class="visually-hidden" role="status">Loading...</span>
+                                <i class="bi bi-trash-fill"></i>
+                            </button>
+                        </div>
+                    </div>`;
                     $('#compose-files-list').append(newCard);
                 }
             });
@@ -491,7 +493,7 @@ $(document).ready(function () {
         imageListSource.close();
     }
 
-    function convertBytes(bytes){
+    function convertBytes(bytes) {
         const sizeMb = bytes / 1048576
         const sizeGb = sizeMb / 1024
         let displaySize;

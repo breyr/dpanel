@@ -25,8 +25,9 @@ td {
 }
 
 .compose-file {
-  width: 200px;
-  height: 200px;
+  min-width: 200px;
+  padding-left: 10px;
+  padding-right: 10px;
   position: relative;
   background-color: #dcdcdc;
   border-radius: 10px;
@@ -51,4 +52,8 @@ td {
 
 .compose-file:hover .hover-div {
   visibility: visible;
+}
+
+.compose-button {
+  margin-bottom: 0px !important;
 }
