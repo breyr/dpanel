@@ -163,7 +163,7 @@ async def perform_action(
 
 # ======== ENDPOINTS =========
 
-app.mount("/", StaticFiles(directory="../nginx"), name="nginx")
+app.mount("/", StaticFiles(directory="static"), name="static")
 
 @app.get("/api/streams/composefiles")
 async def list_files():
