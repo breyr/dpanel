@@ -19,6 +19,7 @@ services:
   fastapi:
     build:
       context: ./fastapi
+      dockerfile: Dockerfile.prod
     ports:
       - 5002:5002
     volumes:
