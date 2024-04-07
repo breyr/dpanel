@@ -190,10 +190,17 @@ func collectContainerStats(ctx context.Context, dockerClient *client.Client, con
 			var customStats ContainerStats
 			customStats.ID = containerStats.ID
 			customStats.Name = containerStats.Name
-			customStats.CpuPercent = float64(containerStats.CPUStats.CPUUsage.TotalUsage) / float64(containerStats.CPUStats.SystemUsage) * 100
-			customStats.MemoryUsage = containerStats.MemoryStats.Usage
-			customStats.MemoryLimit = containerStats.MemoryStats.Limit
-			customStats.MemoryPercent = float64(containerStats.MemoryStats.Usage) / float64(containerStats.MemoryStats.Limit) * 100
+			if containerStats.CPUStats.SystemUsage != 0 {
+				customStats.CpuPercent = float64(containerStats.CPUStats.CPUUsage.TotalUsage) / float64(containerStats.CPUStats.SystemUsage) * 100
+			} else {
+					customStats.CpuPercent = 0
+			}
+			
+			if containerStats.MemoryStats.Limit != 0 {
+					customStats.MemoryPercent = float64(containerStats.MemoryStats.Usage) / float64(containerStats.MemoryStats.Limit) * 100
+			} else {
+					customStats.MemoryPercent = 0
+			}
 
 			statsCh <- customStats
 		}
