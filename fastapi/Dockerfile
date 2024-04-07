@@ -22,6 +22,5 @@ COPY ./main.py /code/
 COPY ./helpers.py /code/
 COPY ./docker_utils.py /code/
 COPY ./logger.py /code/
-COPY /static /code/
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5002", "--reload"]

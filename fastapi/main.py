@@ -27,7 +27,6 @@ logger = Logger(__name__)
 docker_manager = DockerManager()
 
 app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
 
 origins = ["http://localhost:3000"]
 
