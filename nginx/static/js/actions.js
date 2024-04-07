@@ -25,8 +25,8 @@ function getStatusClass(status) {
 function getPortBindings(portBindings) {
   var result = "";
   $.each(portBindings, function (i, port) {
-    if (port.PublicPort) {
-      result += port.PrivatePort + ':' + port.PublicPort;
+    if (port.PublicPort && port.IP === "0.0.0.0") {
+      result += port.PrivatePort + ':' + port.PublicPort + "<br>";
     }
   });
   return result;
