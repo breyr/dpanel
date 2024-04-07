@@ -28,6 +28,7 @@ logger = Logger(__name__)
 docker_manager = DockerManager()
 
 app = FastAPI()
+app.mount("/", StaticFiles(directory="static"), name="static")
 
 origins = ["http://localhost:3000"]
 
@@ -163,7 +164,6 @@ async def perform_action(
 
 # ======== ENDPOINTS =========
 
-app.mount("/", StaticFiles(directory="static"), name="static")
 
 @app.get("/api/streams/composefiles")
 async def list_files():
