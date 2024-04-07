@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DPanel - Dashboard</title>
+    <link rel="icon" href="./static/media/favicon.png">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Bootstrap icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="./static/css/custom.css" rel="stylesheet">
+    <link href="./static/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./static/css/styles.css">
+    <!-- Font Awesome -->
+    <script src="https://kit.fontawesome.com/4137f8921b.js" crossorigin="anonymous"></script>
+    <!-- dropzone -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <main class="h-100 w-100">
+        <section class="p-3" id="app">
+            <h1 class="mb-3 d-flex align-items-center" style="margin-bottom: 0.25rem !important;">
+                DPanel
+                <img src="./static/media/docker.png" alt="DPanel logo" class="me-2" style="height: 34px;">
+            </h1>
+            <div class="mb-3" id="page-links" style="margin-left: 3px;">
+                <a class="me-2" href="http://localhost:5002/docs" target="_blank">API Reference</a>
+                <a class="me-2" href="https://github.com/breyr/dpanel" target="_blank">GitHub Repository</a>
+                <a class="me-2" href="">Contribute</a>
+                <a href="">Settings</a>
+            </div>
+
+            <!-- CONTAINERS -->
+            <div class="container-fluid p-3 my-3 bg-light rounded shadow" id="primary-block"
+                style="margin-top: 20px !important;">
+                <div class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse"
+                    data-bs-target="#containerDetails" aria-expanded="true" aria-controls="containerDetails">
+                    <div>
+                        <i class="bi bi-box-seam me-2"></i>
+                        <span class="page-title">Containers</span>
+                    </div>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+                <div class="collapse show" id="containerDetails">
+                    <div class="d-flex justify-content-between mb-3">
+                        <!-- Inside the drop down -->
+                        <main style="width: 100% !important; padding-top: 20px;">
+                            <div class="d-flex justify-content-between mb-3 button-box">
+                                <div class="btn-group" role="group" aria-label="Basic example">
+                                    <button type="button" class="btn btn-success disabled" id="btn-start"><i
+                                            class="bi bi-play-fill"></i>
+                                        start</button>
+                                    <button type="button" class="btn btn-danger disabled" id="btn-stop"><i
+                                            class="bi bi-stop-fill"></i>
+                                        stop</button>
+                                    <button type="button" class="btn btn-danger disabled" id="btn-kill"><i
+                                            class="bi bi-radioactive"></i>
+                                        kill</button>
+                                    <button type="button" class="btn btn-primary disabled" id="btn-restart"><i
+                                            class="bi bi-arrow-repeat"></i>
+                                        restart</button>
+                                    <button type="button" class="btn btn-primary disabled" id="btn-pause"><i
+                                            class="bi bi-pause-fill"></i>
+                                        pause</button>
+                                    <button type="button" class="btn btn-primary disabled" id="btn-resume"><i
+                                            class="bi bi-play-fill"></i>
+                                        resume</button>
+                                    <button class="btn btn-danger disabled" id="btn-delete"><i
+                                            class="bi bi-trash-fill"></i>
+                                        delete</button>
+                                </div>
+                                <div>
+                                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#pruneModal"
+                                        id="prune-btn">
+                                        <i class="fa-solid fa-tree" id="prune-icon"></i>
+                                        <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"
+                                            id="prune-spinner"></span>
+                                        <span class="visually-hidden" role="status">Loading...</span>
+                                        prune
+                                    </button>
+                                    <button class="btn btn-primary" data-bs-toggle="modal"
+                                        data-bs-target="#createContainerModal"><i class="fa-solid fa-plus"></i>
+                                        container</button>
+                                </div>
+
+                                <!-- Create container modal -->
+                                <div class="modal fade" id="createContainerModal" tabindex="-1"
+                                    aria-labelledby="createContainerModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="createContainerModalLabel">Create & Run a
+                                                    Container
+                                                </h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                    aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+
+                                                <!-- Name -->
+                                                <div class="mb-3">
+                                                    <label for="container-name" class="form-label">Name</label>
+                                                    <input type="text" id="container-name" class="form-control"
+                                                        placeholder="name">
+                                                </div>
+
+                                                <!-- Image -->
+                                                <div class="mb-3" style="margin-bottom: 25px !important;">
+                                                    <label for="run-image" class="form-label">Image</label>
+                                                    <div class="input-group">
+                                                        <input type="text" id="run-image" aria-label="run-image"
+                                                            class="form-control required" placeholder="image name"
+                                                            required>
+                                                        <span class="input-group-text">:</span>
+                                                        <input type="text" id="run-tag" aria-label="run-tag"
+                                                            class="form-control" placeholder="latest">
+                                                    </div>
+                                                </div>
+
+                                                <!-- Ports and Protocol -->
+                                                <div class="accordion" id="portsAccordion">
+                                                    <div class="accordion-item">
+                                                        <h2 class="accordion-header" id="portsHeading">
+                                                            <button class="accordion-button collapsed" type="button"
+                                                                data-bs-toggle="collapse"
+                                                                data-bs-target="#portsCollapse" aria-expanded="false"
+                                                                aria-controls="portsCollapse">
+                                                                Networking
+                                                            </button>
+                                                        </h2>
+                                                        <div id="portsCollapse" class="accordion-collapse collapse"
+                                                            aria-labelledby="portsHeading"
+                                                            data-bs-parent="#portsAccordion">
+                                                            <div class="accordion-body">
+                                                                <!-- Ports -->
+                                                                <div class="mb-3">
+                                                                    <label for="container-port"
+                                                                        class="form-label">Container Port</label>
+                                                                    <input type="text" id="container-port"
+                                                                        name="container-port" class="form-control"
+                                                                        placeholder="Ex. 2222">
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label for="host-port" class="form-label">Host
+                                                                        Port</label>
+                                                                    <input type="text" id="host-port" name="host-port"
+                                                                        class="form-control" placeholder="Ex. 80">
+                                                                </div>
+
+                                                                <!-- Protocol -->
+                                                                <div class="mb-3">
+                                                                    <label for="protocol"
+                                                                        class="form-label">Protocol</label>
+                                                                    <select id="protocol" name="protocol"
+                                                                        class="form-select">
+                                                                        <option selected></option>
+                                                                        <option value="tcp">TCP</option>
+                                                                        <option value="udp">UDP</option>
+                                                                        <option value="sctp">SCTP</option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <br>
+
+                                                <!-- Environment -->
+                                                <div class="accordion" id="environmentAccordion">
+                                                    <div class="accordion-item">
+                                                        <h2 class="accordion-header" id="environmentHeading">
+                                                            <button class="accordion-button collapsed" type="button"
+                                                                data-bs-toggle="collapse"
+                                                                data-bs-target="#environmentCollapse"
+                                                                aria-expanded="false"
+                                                                aria-controls="environmentCollapse">
+                                                                Environment
+                                                            </button>
+                                                        </h2>
+                                                        <div id="environmentCollapse"
+                                                            class="accordion-collapse collapse"
+                                                            aria-labelledby="environmentHeading"
+                                                            data-bs-parent="#environmentAccordion">
+                                                            <div class="accordion-body">
+                                                                <!-- Environment -->
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Environment</label>
+                                                                    <div id="env-container">
+                                                                        <label
+                                                                            class="btn btn-outline-primary add-row mb-2">Add
+                                                                            pair</label>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <br>
+
+                                                <!-- Volumes -->
+                                                <div class="accordion" id="volumeAccordion">
+                                                    <div class="accordion-item">
+                                                        <h2 class="accordion-header" id="volumeHeading">
+                                                            <button class="accordion-button collapsed" type="button"
+                                                                data-bs-toggle="collapse"
+                                                                data-bs-target="#volumeCollapse" aria-expanded="false"
+                                                                aria-controls="volumeCollapse">
+                                                                Volumes
+                                                            </button>
+                                                        </h2>
+                                                        <div id="volumeCollapse" class="accordion-collapse collapse"
+                                                            aria-labelledby="volumeHeading"
+                                                            data-bs-parent="#volumeAccordion">
+                                                            <div class="accordion-body">
+                                                                <!-- Volumes -->
+                                                                <div class="mb-3">
+                                                                    <label for="volume-name" class="form-label">Volume
+                                                                        Name</label>
+                                                                    <input type="text" id="volume-name"
+                                                                        class="form-control" placeholder="volume name">
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label for="volume-bind" class="form-label">Volume
+                                                                        Bind</label>
+                                                                    <input type="text" id="volume-bind"
+                                                                        class="form-control" placeholder="volume bind">
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label for="volume-mode" class="form-label">Volume
+                                                                        Mode</label>
+                                                                    <select id="volume-mode" name="volume-mode"
+                                                                        class="form-select">
+                                                                        <option selected></option>
+                                                                        <option value="ro">Read-only</option>
+                                                                        <option value="rw">Read-write</option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <br>
+
+                                                <button type="submit" class="btn btn-success" id="create-container-btn">
+                                                    <span class="spinner-border spinner-border-sm d-none"
+                                                        aria-hidden="true" id="run-container-spinner"></span>
+                                                    <span class="visually-hidden" role="status">Loading...</span>
+                                                    Create
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Prune modal -->
+                                <div class="modal fade" id="pruneModal" tabindex="-1" aria-labelledby="pruneModal"
+                                    aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="pruneModalLabel">Docker System
+                                                    Prune</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                    aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="mb-3 p-3 border rounded bg-light"
+                                                    style="padding-bottom: 0px !important;">
+                                                    <h4 class="mb-3">Select what to prune:</h4>
+                                                    <div class="form-check mb-3">
+                                                        <input class="form-check-input" type="checkbox" value=""
+                                                            id="all-prune-check">
+                                                        <label class="form-check-label"
+                                                            for="all-prune-check">All</label>
+                                                    </div>
+                                                    <div class="d-flex flex-column flex-md-row gap-3 mb-3"
+                                                        id="individual-prune-selects">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox"
+                                                                value="containers" id="cont-prune-check">
+                                                            <label class="form-check-label"
+                                                                for="cont-prune-check">Containers</label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox"
+                                                                value="images" id="img-prune-check">
+                                                            <label class="form-check-label"
+                                                                for="img-prune-check">Images</label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox"
+                                                                value="volumes" id="vol-prune-check">
+                                                            <label class="form-check-label"
+                                                                for="vol-prune-check">Volumes</label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox"
+                                                                value="networks" id="net-prune-check">
+                                                            <label class="form-check-label"
+                                                                for="net-prune-check">Networks</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="mb-3 text-danger">
+                                                    You are about to prune your system, do you wish to continue?
+                                                </div>
+                                                <input type="checkbox" class="btn-check disabled" id="btncheck1"
+                                                    autocomplete="off">
+                                                <label class="btn btn-outline-dark" for="btncheck1">Yes</label>
+                                                <button type="submit" class="btn btn-danger disabled"
+                                                    id="confirm-prune">
+                                                    prune
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                            <section class="flex-grow-1">
+                                <table class="table">
+                                    <thead class="table-primary">
+                                        <th style="width:100px;"><input type="checkbox" id="select-all" class="me-2" />
+                                        </th>
+                                        <th scope="col">Name</th>
+                                        <th scope="col">Short ID</th>
+                                        <th scope="col">Status</th>
+                                        <th scope="col" class="w-20">Uptime</th>
+                                        <th scope="col">Image</th>
+                                        <th scope="col">Port Binding</th>
+                                        <th scope="col">Actions</th>
+                                    </thead>
+                                    <tbody id="containers-tbody">
+                                    </tbody>
+                                </table>
+                                <div id="containers-loading" style="display: none; color: rgba(0, 0, 0, 0.2);"
+                                    class="text-center">
+                                    <div class="spinner-border text-info" role="status">
+                                        <span class="sr-only">Loading...</span>
+                                    </div>
+                                </div>
+                            </section>
+                        </main>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STATS -->
+            <div class="container-fluid p-3 my-3 bg-light rounded shadow" id="primary-block">
+                <div class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse"
+                    data-bs-target="#statisticsDetails" aria-expanded="false" aria-controls="statisticsDetails">
+                    <div>
+                        <i class="bi bi-graph-up me-2"></i>
+                        <span class="page-title">Live Stats</span>
+                    </div>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+                <div class="collapse" id="statisticsDetails">
+                    <!-- table of stats -->
+                    <section class="flex-grow-1">
+                        <table class="table">
+                            <thead class="table-primary">
+                                <th scope="col">Name</th>
+                                <th scope="col">CPU %</th>
+                                <th scope="col">Memory Usage</th>
+                                <th scope="col">Memory Limit</th>
+                                <th scope="col">Memory %</th>
+                            </thead>
+                            <tbody id="stats-tbody">
+                            </tbody>
+                        </table>
+                        <div id="stats-loading" style="display: none; color: rgba(0, 0, 0, 0.2);" class="text-center">
+                            <div class="spinner-border text-info" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- IMAGES AND COMPOSE -->
+            <div class="container-fluid" style="padding: 0px !important;">
+                <div class="row">
+
+                    <!-- Images block -->
+                    <div class="col-md-6">
+                        <div class="p-3 my-3 bg-light rounded shadow" style="margin-top: 0px !important;">
+                            <div class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse"
+                                data-bs-target="#imageDetails" aria-expanded="false" aria-controls="imageDetails">
+                                <div>
+                                    <i class="bi bi-box me-2"></i> <!-- Changed icon -->
+                                    <span class="page-title">Images</span>
+                                </div>
+                                <i class="bi bi-chevron-down"></i>
+                            </div>
+                            <div class="collapse" id="imageDetails">
+                                <main style="width: 100% !important; padding-top: 20px;">
+                                    <div class="d-flex justify-content-between mb-3 button-box">
+                                        <button type="button" class="btn btn-primary btn-sm mr-2" data-bs-toggle="modal"
+                                            data-bs-target="#pullModal" id="pull-modal-btn">
+                                            <i class="fa-solid fa-download" id="pull-icon"></i>
+                                            Pull
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-sm mr-2 disabled"
+                                            id="delete-img-btn"><i class="bi bi-trash-fill"></i> Delete</button>
+                                    </div>
+                                </main>
+
+                                <!-- Pull modal -->
+                                <div class="modal fade" id="pullModal" tabindex="-1" aria-labelledby="pullModal"
+                                    aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="pullImageModalLabel">Pull Image</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                    aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="input-group">
+                                                    <input type="text" id="image-name" aria-label="image"
+                                                        class="form-control required" placeholder="image name" required>
+                                                    <span class="input-group-text">:</span>
+                                                    <input type="text" id="tag" aria-label="tag" class="form-control"
+                                                        placeholder="latest" aria-describedby="imageHelp">
+                                                    <button type="submit" class="btn btn-success" id="pull-img-btn">
+                                                        Pull</button>
+                                                </div>
+                                                <div id="pull-validation">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- table of images -->
+                                <section class="flex-grow-1">
+                                    <table class="table">
+                                        <thead class="table-primary">
+                                            <th style="width:50px;"><input type="checkbox" class="me-2"
+                                                    id="select-all-image" />
+                                            </th>
+                                            <th scope="col">Name</th>
+                                            <th scope="col">Tag</th>
+                                            <th scope="col">Date</th>
+                                            <th scope="col">Size</th>
+                                            <th scope="col">Running</th>
+                                        </thead>
+                                        <tbody id="images-tbody">
+                                        </tbody>
+                                    </table>
+                                    <div id="images-loading" style="display: none; color: rgba(0, 0, 0, 0.2);"
+                                        class="text-center">
+                                        <div class="spinner-border text-info" role="status">
+                                            <span class="sr-only">Loading...</span>
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Compose block -->
+                    <div class="col-md-6">
+                        <div class="p-3 my-3 bg-light rounded shadow" style="margin-top: 0px !important;">
+                            <div class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse"
+                                data-bs-target="#composeDetails" aria-expanded="false" aria-controls="composeDetails">
+                                <div>
+                                    <i class="bi bi-vector-pen"></i>
+                                    <span class="page-title">Compose</span>
+                                </div>
+                                <i class="bi bi-chevron-down"></i>
+                            </div>
+                            <div class="collapse" id="composeDetails">
+                                <!-- Your content for the Volumes block goes here -->
+                                <div class="mt-2">
+                                    <button class="btn btn-secondary" data-bs-toggle="modal"
+                                        data-bs-target="#composeModal">
+                                        <i class="bi bi-file-earmark-arrow-up"></i>
+                                        Upload Compose File
+                                    </button>
+                                    <section id="compose-files-list" class="d-flex flex-wrap">
+                                    </section>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- compose modal -->
+                    <div class="modal" id="composeModal" tabindex="-1" aria-labelledby="composeModalLabel"
+                        aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Upload Compose File</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label for="projectName" class="form-label">Project name <span
+                                                    class="text-danger">*</span></label>
+                                            <input type="email" class="form-control" id="projectName"
+                                                placeholder="wordpress-stack" required>
+                                            <small>this will become the name of your compose file</small>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="yamlContents">Docker Compose YAML contents <span
+                                                    class="text-danger">*</span></label>
+                                            <textarea class="form-control" name="yamlContents" id="yamlContents"
+                                                rows="15" required></textarea>
+                                        </div>
+                                        <br>
+                                        <button class="btn btn-secondary" id="upload-compose-btn">
+                                            <span class="spinner-border spinner-border-sm d-none"
+                                                aria-hidden="true"></span>
+                                            <span class="visually-hidden" role="status">Loading...</span>
+                                            Upload
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Messages -->
+            <section class="toast-container position-fixed bottom-0 end-0 p-3 w-25" id="toast-container"></section>
+    </main>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <!-- Custom JS -->
+    <script src="./static/js/lib.js"></script>
+    <script src="./static/js/actions.js"></script>
+    <!-- dropzone -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.js"></script>
+    <!-- AJAX Imports -->
+    <script id="js-imports"></script>
+</body>
+
+</html>
