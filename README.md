@@ -12,7 +12,7 @@ DPanel is a web interface leveraging FastAPI, Redis, Go PubSub, and Nginx to man
 
 ## Usage
 
-Navigate to http://localhost:3000 on a browser.
+Navigate to http://localhost:5002 on a browser.
 
 ## Installation
 
