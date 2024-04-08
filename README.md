@@ -4,7 +4,7 @@ DPanel is a web interface leveraging FastAPI, Redis, Go PubSub, and Nginx to man
 
 <!-- Main Image -->
 <div style="width: 50%; overflow: hidden;">
-    <img src="resources/main-page.png" alt="Main Page" style="width: 100%; object-fit: scale-down; object-position: center center;">
+    <img src="resources/main-page.png" alt="Main Page" style="width: 200%; object-fit: cover; object-position: center center; transform: scale(1.5);">
 </div>
 
 ### Architecture
