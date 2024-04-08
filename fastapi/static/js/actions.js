@@ -1,6 +1,6 @@
 function getInfo(containerId) {
   $.ajax({
-    url: `https://${window.location.hostname}/api/containers/info/${containerId}`,
+    url: `http://${window.location.hostname}:${window.location.port}/api/containers/info/${containerId}`,
     type: 'GET',
     success: function (data) {
       // Create a new Blob from the JSON string
@@ -58,7 +58,7 @@ function performActionContainer(action, actionBtnId) {
   toggleSpinnerAndButtonRow('container', actionBtnId, false);
 
   $.ajax({
-    url: `https://${window.location.hostname}/api/containers/${action}`,
+    url: `http://${window.location.hostname}:${window.location.port}/api/containers/${action}`,
     type: 'POST',
     contentType: 'application/json',
     data: JSON.stringify({ 'ids': checkedIds }),
@@ -87,7 +87,7 @@ function performActionImage(action, actionBtnId) {
       // shows spinners for image rows
       toggleSpinnerAndButtonRow('image', actionBtnId, false);
       $.ajax({
-        url: `https://${window.location.hostname}/api/images/${action}`,
+        url: `https://${window.location.hostname}:${window.location.port}/api/images/${action}`,
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ 'ids': checkedIds }),
@@ -115,7 +115,7 @@ function performActionImage(action, actionBtnId) {
         $alert = `<p class='text-warning mt-2' id='${uniqueId}'><i class="bi bi-info-circle"></i> Pulling ${image}:${tag}</p>`;
         $('#pull-validation').append($alert);
         $.ajax({
-          url: `https://${window.location.hostname}/api/images/${action}`,
+          url: `http://${window.location.hostname}:${window.location.port}/api/images/${action}`,
           type: 'POST',
           contentType: 'application/json',
           data: JSON.stringify({ 'image': image, 'tag': tag }),
@@ -149,7 +149,7 @@ function performActionCompose(action, projectName, event) {
   $(clickedButton).find(".spinner-border").toggleClass('d-none');
   $(clickedButton).addClass('disabled');
   $.ajax({
-    url: `https://${window.location.hostname}/api/compose/${action}`,
+    url: `http://${window.location.hostname}:${window.location.port}/api/compose/${action}`,
     method: "post",
     data: JSON.stringify({
       projectName
