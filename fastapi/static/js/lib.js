@@ -2,6 +2,8 @@
 
 $(document).ready(function () {
 
+    const websiteUrl = getUrl()
+
     // remove pull validation errors div
     $('#pull-validation-errors').empty();
 
@@ -56,7 +58,7 @@ $(document).ready(function () {
     var containerListSource = null;
     function initContainerListES() {
         if (containerListSource == null || containerListSource.readyState == 2) {
-            containerListSource = new EventSource(`http://${window.location.hostname}:${window.location.port}/api/streams/containerlist`);
+            containerListSource = new EventSource(`${websiteUrl}/api/streams/containerlist`);
             containerListSource.onerror = function (event) {
                 if (containerListSource.readyState == 2) {
                     // retry connection to ES
@@ -145,7 +147,7 @@ $(document).ready(function () {
     var messagesSource = null;
     function initMessageES() {
         if (messagesSource == null || messagesSource.readyState == 2) {
-            messagesSource = new EventSource(`http://${window.location.hostname}:${window.location.port}/api/streams/servermessages`);
+            messagesSource = new EventSource(`${websiteUrl}/api/streams/servermessages`);
             messagesSource.onerror = function (event) {
                 if (messagesSource.readyState == 2) {
                     // retry connection to ES
@@ -198,7 +200,7 @@ $(document).ready(function () {
     var imageListSource = null;
     function initImageListES() {
         if (imageListSource == null || imageListSource.readyState == 2) {
-            imageListSource = new EventSource(`http://${window.location.hostname}:${window.location.port}/api/streams/imagelist`);
+            imageListSource = new EventSource(`${websiteUrl}/api/streams/imagelist`);
             imageListSource.onerror = function (event) {
                 if (imageListSource.readyState == 2) {
                     // retry connection to ES
@@ -306,7 +308,7 @@ $(document).ready(function () {
             // Go is publishing all individual container stats as messages to container_metrics channel
             // so that means each message HAS an id for a container and stats for ONLY that container
             // this is why containermetrics doesnt need to use id
-            containerStatsSource = new EventSource(`http://${window.location.hostname}:${window.location.port}/api/streams/containermetrics`);//how come /containermetrics doesnt have the id
+            containerStatsSource = new EventSource(`${websiteUrl}/api/streams/containermetrics`);//how come /containermetrics doesnt have the id
             containerStatsSource.onerror = function (event) {
                 if (containerStatsSource.readyState == 2) {
                     // retry connection to ES
@@ -405,7 +407,7 @@ $(document).ready(function () {
         $(this).find('.spinner-border').toggleClass('d-none');
 
         $.ajax({
-            url: `http://${window.location.hostname}:${window.location.port}/api/compose/upload`,
+            url: `${websiteUrl}/api/compose/upload`,
             type: 'POST',
             data: JSON.stringify({
                 "projectName": projectName,
@@ -430,7 +432,7 @@ $(document).ready(function () {
     let composeFilesState = new Set();
     function initComposeFilesSource() {
         if (composeFilesSource == null || composeFilesSource.readyState == 2) {
-            composeFilesSource = new EventSource(`http://${window.location.hostname}:${window.location.port}/api/streams/composefiles`);
+            composeFilesSource = new EventSource(`${websiteUrl}/api/streams/composefiles`);
             composeFilesSource.onerror = function (event) {
                 if (composeFilesSource.readyState == 2) {
                     // retry connection to ES
@@ -586,7 +588,7 @@ $(document).ready(function () {
         $('#create-container-btn').addClass('disabled');
         // ajax request
         $.ajax({
-            url: `http://${window.location.hostname}:${window.location.port}/api/containers/run`,
+            url: `${websiteUrl}/api/containers/run`,
             type: 'post',
             contentType: 'application/json',
             data: JSON.stringify({
@@ -631,7 +633,7 @@ $(document).ready(function () {
         // show spinner
         $('#prune-spinner').toggleClass('d-none');
         $.ajax({
-            url: `http://${window.location.hostname}:${window.location.port}/api/system/prune`,
+            url: `${websiteUrl}/api/system/prune`,
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({

@@ -1,6 +1,16 @@
+function getUrl() {
+  let url;
+  if (window.location.hostname === 'localhost') {
+    url = `http://${window.location.hostname}:${window.location.port}`
+  } else {
+    url = `http://${window.location.hostname}`
+  }
+  return url;
+}
+
 function getInfo(containerId) {
   $.ajax({
-    url: `http://${window.location.hostname}:${window.location.port}/api/containers/info/${containerId}`,
+    url: `${getUrl()}/api/containers/info/${containerId}`,
     type: 'GET',
     success: function (data) {
       // Create a new Blob from the JSON string
@@ -26,7 +36,12 @@ function getPortBindings(portBindings) {
   var result = "";
   $.each(portBindings, function (i, port) {
     if (port.PublicPort && port.IP === "0.0.0.0") {
-      result += port.PrivatePort + ':' + port.PublicPort + "<br>";
+      if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+        var link = "http://" + window.location.hostname + ":" + port.PublicPort;
+        result += `<a href=${link} target="_blank">${port.PublicPort}:${port.PrivatePort} <i class="bi bi-box-arrow-up-right"></i>`;
+      } else {
+        result += port.PublicPort + ':' + port.PrivatePort + "<br>";
+      }
     }
   });
   return result;
@@ -58,7 +73,7 @@ function performActionContainer(action, actionBtnId) {
   toggleSpinnerAndButtonRow('container', actionBtnId, false);
 
   $.ajax({
-    url: `http://${window.location.hostname}:${window.location.port}/api/containers/${action}`,
+    url: `${getUrl()}/api/containers/${action}`,
     type: 'POST',
     contentType: 'application/json',
     data: JSON.stringify({ 'ids': checkedIds }),
@@ -87,7 +102,7 @@ function performActionImage(action, actionBtnId) {
       // shows spinners for image rows
       toggleSpinnerAndButtonRow('image', actionBtnId, false);
       $.ajax({
-        url: `https://${window.location.hostname}:${window.location.port}/api/images/${action}`,
+        url: `${getUrl()}/api/images/${action}`,
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ 'ids': checkedIds }),
@@ -115,7 +130,7 @@ function performActionImage(action, actionBtnId) {
         $alert = `<p class='text-warning mt-2' id='${uniqueId}'><i class="bi bi-info-circle"></i> Pulling ${image}:${tag}</p>`;
         $('#pull-validation').append($alert);
         $.ajax({
-          url: `http://${window.location.hostname}:${window.location.port}/api/images/${action}`,
+          url: `${getUrl()}/api/images/${action}`,
           type: 'POST',
           contentType: 'application/json',
           data: JSON.stringify({ 'image': image, 'tag': tag }),
@@ -149,7 +164,7 @@ function performActionCompose(action, projectName, event) {
   $(clickedButton).find(".spinner-border").toggleClass('d-none');
   $(clickedButton).addClass('disabled');
   $.ajax({
-    url: `http://${window.location.hostname}:${window.location.port}/api/compose/${action}`,
+    url: `${getUrl()}/api/compose/${action}`,
     method: "post",
     data: JSON.stringify({
       projectName
