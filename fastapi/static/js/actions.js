@@ -3,7 +3,7 @@ function getUrl() {
   if (window.location.hostname === 'localhost') {
     url = `http://${window.location.hostname}:${window.location.port}`
   } else {
-    url = `http://${window.location.hostname}`
+    url = `https://${window.location.hostname}`
   }
   return url;
 }
