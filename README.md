@@ -54,11 +54,11 @@ DPanel is a web interface leveraging FastAPI, Redis, Go PubSub, and Nginx to man
 
 ### Running over LAN
 
-1. Navigate to https://dpanel.<server-ip>.com on a browser.
+1. Navigate to https://0.0.0.0 on a browser.
 
 ### Running over Cloudflared
 
-1. Navigate to https://dpanel.<domain>.com on a browser.
+1. Navigate to https://dpanel.domain.com on a browser.
 
 ## Installation
 
