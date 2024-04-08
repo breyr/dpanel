@@ -3,9 +3,7 @@
 DPanel is a web interface leveraging FastAPI, Redis, Go PubSub, and Nginx to manage Docker processes, including containers, images, and volumes, with real-time statistics.
 
 <!-- Main Image -->
-<div style="width: 50%; overflow: hidden;">
-    <img src="resources/main-page.png" alt="Main Page" style="width: 200%; object-fit: cover; object-position: center center; transform: scale(1.5);">
-</div>
+![Main Page](resources/cropped/main-page.png)
 
 ### Architecture
 
