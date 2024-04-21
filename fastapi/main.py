@@ -30,8 +30,6 @@ docker_manager = DockerManager()
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-origins = ["http://localhost:3000"]
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Allows all origins
@@ -90,7 +88,7 @@ async def perform_action(
                 # if create a new container, have to pass config from request
                 if config:
                     res = await action(config)
-                    logger.info(f"Result from creating new container")
+                    # logger.info(f"Result from creating new container")
                 else:
                     container = await docker_manager.async_client.containers.get(id)
                     res = await action(container)
@@ -215,7 +213,7 @@ def info(container_id: str):
 async def prune_system(req: Request):
     data = await req.json()
     objects_to_prune: List[str] = data["objectsToPrune"]
-    logger.info(f"Objects: {objects_to_prune}")
+    # logger.info(f"Objects: {objects_to_prune}")
     try:
         res = {}
         for obj in objects_to_prune:
@@ -239,7 +237,7 @@ async def prune_system(req: Request):
         # res['networks'] -> list or None ['NetworksDeleted']
         async def schedule_messages(object_type: str, res: dict, redis):
             # get number of objects deleted
-            logger.info(f"Scheduling message for object: {object_type} after pruning")
+            # logger.info(f"Scheduling message for object: {object_type} after pruning")
             num_deleted = (
                 0
                 if res[object_type][f"{object_type}Deleted"] is None
@@ -410,7 +408,7 @@ async def upload_file(req: Request):
 @app.post("/api/compose/delete")
 async def delete_compose_file(req: Request):
     data = await req.json()
-    logger.info(f"File to delete: {data}")
+    # logger.info(f"File to delete: {data}")
     file_to_delete = data.get("projectName")
     try:
         os.remove(f"./composefiles/{file_to_delete}.yaml")
@@ -440,7 +438,7 @@ async def run_compose_file(req: Request):
     project_name = file_to_run.split(".")[0]
     try:
         # create docker client
-        logger.info("Attempting to compose up")
+        # logger.info("Attempting to compose up")
         docker = DockerClient(
             compose_files=[file_path], compose_project_name=project_name
         )
@@ -472,7 +470,7 @@ async def compose_down(req: Request):
     # read the project name from the Docker Compose file
     try:
         # create docker client
-        logger.info("Attempting to compose up")
+        # logger.info("Attempting to compose up")
         docker = DockerClient(
             compose_files=[file_path], compose_project_name=project_name
         )

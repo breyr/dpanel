@@ -21,7 +21,7 @@ class DockerManager:
     async def run_container(self, config):
         # attempt to create and run a container based on the config
         try:
-            self.logger.info(f"Attempting to create and run new container")
+            # self.logger.info(f"Attempting to create and run new container")
             container = self.sync_client.containers.run(
                 image=config["image"],
                 name=config.get("containerName"),
@@ -30,7 +30,7 @@ class DockerManager:
                 environment=config.get("environment"),
                 detach=True,
             )
-            self.logger.info(f"Created and ran new container: {container}")
+            # self.logger.info(f"Created and ran new container: {container}")
         except DockerError as e:
             return {"type": "error", "statusCode": e.status, "message": e.message}
         return {"type": "success", "objectId": container.id}
@@ -97,7 +97,7 @@ class DockerManager:
     async def delete_container(self, container: DockerContainer):
         # delete shouldn't go off of status because it wouldn't exist!
         try:
-            self.logger.info(f"Attempting to delete container: {container}")
+            # self.logger.info(f"Attempting to delete container: {container}")
             # stop running container before deletion
             container_details = await self.get_container_details(container)
             if (
@@ -111,7 +111,7 @@ class DockerManager:
                     await container.stop()
                     self.logger.info(f"Stopped running container: {container}")
             await container.delete()
-            self.logger.info(f"Deleted container: {container}")
+            # self.logger.info(f"Deleted container: {container}")
         except DockerError as e:
             # already deleted
             return {"type": "error", "objectId": container_details["Id"]}
@@ -132,7 +132,7 @@ class DockerManager:
             # if tag is an empty string, use latest
             tag = tag if tag else "latest"
             res = await self.images_interface.pull(from_image=from_image, tag=tag)
-            self.logger.info(res)
+            # self.logger.info(res)
         except DockerError as e:
             return {"type": "error", "statusCode": e.status, "message": e.message}
         return {"type": "success", "message": res[-1]}
