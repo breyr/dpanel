@@ -1,0 +1,20 @@
+version: '3.9'
+services:
+  kali-fordv:
+    image: vitalyford/kali
+    ports:
+        - "5908:5908"
+    volumes:
+        - kali_data_fordv:/home/kali
+    container_name: kali-fordv
+    networks:
+        - cs262network
+    privileged: true
+    deploy:
+        resources:
+            limits:
+                memory: 2048M
+volumes:
+   kali_data_fordv:
+networks:
+    cs262network:

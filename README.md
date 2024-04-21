@@ -62,9 +62,40 @@ DPanel is a web interface leveraging FastAPI, Redis, Go PubSub, and Nginx to man
 
 ## Installation
 
-1. Clone the GitHub repo with ```git clone https://github.com/breyr/dpanel.git```.
-2. Navigate into the directory with ```cd dpanel```.
-3. Start the Docker containers with ```docker compose -f compose.prod.yaml up --build```.
+Copy and run the following compose file:
 
-*You only have to append the ```--build``` flag when running for the first time.*
+```yaml
+version: "3.9"
 
+services:
+  pubsub:
+    image: breyr/dpanel-pubsub-go
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: on-failure
+    depends_on:
+      - redis
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+  fastapi:
+    image: breyr/dpanel-fastapi
+    ports:
+      - 5002:5002
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - composefiles:/app/composefiles
+    restart: on-failure
+    depends_on:
+      - redis
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+  redis:
+    image: redis:latest
+    ports:
+      - 6379:6379
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  composefiles:
+```

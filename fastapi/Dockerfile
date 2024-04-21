@@ -1,6 +1,6 @@
 FROM python:3.9
 
-WORKDIR /code
+WORKDIR /app
 
 COPY ./requirements.txt /code/requirements.txt
 
@@ -18,10 +18,10 @@ RUN mkdir -p ~/.docker/cli-plugins/
 RUN wget https://github.com/docker/compose/releases/download/v2.0.1/docker-compose-linux-x86_64 -O ~/.docker/cli-plugins/docker-compose
 RUN chmod a+x  ~/.docker/cli-plugins/docker-compose
 
-COPY ./main.py /code/
-COPY ./helpers.py /code/
-COPY ./docker_utils.py /code/
-COPY ./logger.py /code/
-COPY ./static /code/static
+COPY ./main.py /app/
+COPY ./helpers.py /app/
+COPY ./docker_utils.py /app/
+COPY ./logger.py /app/
+COPY ./static /app/static
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5002", "--reload"]
